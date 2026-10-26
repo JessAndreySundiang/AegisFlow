@@ -20,6 +20,7 @@ Rows 3–5 record the state at that phase. Their “Playwright missing / NOT RUN
 | Theme tokens | `check_theme.py` | **PASS 16/16** |
 | Contrast (light & dark) | `check_contrast.py` | **PASS 40/40** |
 | Responsive layout | `check_responsive.py` (Playwright + Chromium) | **PASS** at 360, 768, 1280, 1536 px (`scrollWidth == innerWidth`) |
+| Review and History pages in a real browser | Playwright navigation spot-check | **PASS** at 1280 and 360 px; screenshots `ui_checks/review_*.png`, `history_*.png` |
 | Streamlit server health | `/_stcore/health` on port 8501 | `ok` |
 
 Evidence screenshots: `ui_checks/width_360.png`, `width_768.png`, `width_1280.png`, `width_1536.png`.

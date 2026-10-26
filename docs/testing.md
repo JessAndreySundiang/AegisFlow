@@ -136,6 +136,8 @@ RESULT PASS
 
 Playwright and Chromium were installed in the local `.venv` for verification only; neither is listed in `requirements.txt`. The script loads the live mock-mode app at each width and writes full-page screenshots to `ui_checks/width_*.png`. It checks horizontal overflow, not accessibility or visual fidelity to the mockup.
 
+A separate browser spot-check navigated to **Review** and **History** at 1280 and 360 px (`ui_checks/review_1280.png`, `review_360.png`, `history_1280.png`, `history_360.png`). Review showed the version/hash header, the amber “Awaiting review” badge, and the read-only draft; History showed 44 px Delete/Export row actions with no clipping, and the collapsed sidebar at 360 px still reached every page.
+
 ---
 
 ## 7. What the tests actually prove

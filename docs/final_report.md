@@ -388,6 +388,7 @@ Additional recorded smoke checks:
 - All 67 tests passed.
 - Theme checks 16/16 PASS; contrast checks 40/40 PASS.
 - Playwright responsive check at 360/768/1280/1536: **PASS** with full-page screenshots in `ui_checks/`.
+- Browser spot-check of Review and History at 1280 and 360: **PASS** (`ui_checks/review_*.png`, `history_*.png`); the 360 px sidebar collapses and still reaches every page.
 
 ### 6.2 End-to-end scenarios
 

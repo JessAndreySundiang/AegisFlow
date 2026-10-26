@@ -4,15 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from aegisflow.database import Database
 from aegisflow.document_processing import document_to_state, save_and_extract
 from aegisflow.models import TaskStatus
-from aegisflow.skills_loader import load_skills
 from aegisflow.services.workflow_service import WorkflowService
+from aegisflow.skills_loader import load_skills
 from config import Settings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]

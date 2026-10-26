@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from config import Settings
+
 from ..agents.base import AgentFailure, call_agent, failure_result
 from ..database import Database
 from ..models import ClaimStatus, StrictModel, utcnow_iso

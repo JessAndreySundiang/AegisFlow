@@ -7,6 +7,7 @@ from typing import Any
 from langgraph.graph import END, START, StateGraph
 
 from config import Settings
+
 from ..agents.report_writer import run_report_writer
 from ..database import Database
 from ..skills_loader import Skill

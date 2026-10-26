@@ -1,10 +1,12 @@
 # AegisFlow
 
+[![CI](https://github.com/JessAndreySundiang/AegisFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/JessAndreySundiang/AegisFlow/actions/workflows/ci.yml)
+
 A governed, hierarchical multi-agent document-task prototype built with **LangGraph**, **LangChain**, **Streamlit**, and **SQLite**.
 
 AegisFlow turns uploaded PDF/TXT/DOCX files into a reviewed deliverable through a visible chain of specialist agents. It is designed around one rule: **no output is finalized, exported as final, or marked complete without a human approval bound to the exact output version and content hash.**
 
-> **Status: working prototype, mock mode verified.** All 67 automated tests pass. Real LLM mode is implemented but **not verified** because real mode was not enabled and no live provider call was made. See [Verification status](#verification-status).
+> **Status: working prototype, mock mode verified.** All 76 automated tests pass. Real LLM mode is implemented but **not verified** because real mode was not enabled and no live provider call was made. See [Verification status](#verification-status).
 >
 > **Repository:** <https://github.com/JessAndreySundiang/AegisFlow>
 
@@ -70,7 +72,17 @@ Open <http://localhost:8501>.
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
 
-Expected result at the time of writing: **67 passed**.
+Expected result at the time of writing: **76 passed**.
+
+### Quality checks
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m pytest --cov=aegisflow --cov-report=term-missing
+```
+
+Lint is clean, and the suite sits at **76% coverage** (statement + branch) with a CI gate of 75%. `.github/workflows/ci.yml` runs lint, tests with coverage, and the theme/contrast checks on Windows and Ubuntu for every push.
 
 ### Try it without uploading anything
 
@@ -187,7 +199,7 @@ AegisFlow/
 │   └── ui/                    # Streamlit pages and shared components
 ├── skills/                    # 6 SKILL.md instruction packages
 ├── sample_data/               # Clean, injection, corrupt, encrypted fixtures
-├── tests/                     # 67 unit, integration, E2E, UI tests
+├── tests/                     # 76 unit, integration, E2E, UI tests
 ├── docs/                      # Design, governance, risk, testing, NIST, report
 └── slides/                    # Self-contained HTML presentation
 ```
@@ -198,7 +210,8 @@ AegisFlow/
 
 | Area | Status | Evidence |
 |---|---|---|
-| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 67 passing tests |
+| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 76 passing tests |
+| Engineering baseline | **Implemented** | `ruff check` clean; 76% coverage with a 75% gate; CI matrix (Windows + Ubuntu) runs lint, tests, theme and contrast |
 | Human approval / hash binding | **Implemented and verified** | E2E + approval unit tests; UI approval and rejection flows |
 | Injection handling | **Implemented and verified** | TC-06 |
 | Audit and redaction | **Implemented and verified** | TC-12 |
@@ -257,3 +270,5 @@ Details and failure messages: [docs/human_approval.md](docs/human_approval.md).
 ## 10. License and academic use
 
 This is an academic SIP10 final-project prototype. It is not production software. Do not use it to process regulated, confidential, or sensitive personal data without an independent security review.
+
+Released under the [MIT License](LICENSE). Security reports: see [SECURITY.md](SECURITY.md).

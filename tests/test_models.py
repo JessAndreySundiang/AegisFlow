@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from aegisflow.models import (
     Claim,
@@ -22,7 +23,7 @@ def _subtask(id_, agent="document_analyst", skill="document-extraction", deps=No
 
 
 def test_plan_rejects_duplicate_ids():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Plan(
             task_type="summary",
             objective="x",
@@ -32,7 +33,7 @@ def test_plan_rejects_duplicate_ids():
 
 
 def test_plan_rejects_unknown_dependency():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Plan(
             task_type="summary",
             objective="x",
@@ -42,7 +43,7 @@ def test_plan_rejects_unknown_dependency():
 
 
 def test_plan_rejects_self_dependency():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Plan(
             task_type="summary",
             objective="x",
@@ -52,7 +53,7 @@ def test_plan_rejects_self_dependency():
 
 
 def test_blocked_plan_cannot_have_subtasks():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Plan(
             task_type="summary",
             objective="x",
@@ -63,7 +64,7 @@ def test_blocked_plan_cannot_have_subtasks():
 
 
 def test_claim_requires_text():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Claim(id="S1", text="   ")
 
 

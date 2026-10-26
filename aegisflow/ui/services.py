@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import streamlit as st
 
 from config import Settings
+
 from ..database import Database
 from ..services.workflow_service import WorkflowService
 from ..skills_loader import load_skills

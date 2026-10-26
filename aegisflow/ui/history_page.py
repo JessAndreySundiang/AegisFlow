@@ -80,7 +80,7 @@ def _table(services, tasks) -> None:
     widths = [0.8, 1.8, 1.9, 1.1, 0.8, 1.4]
     with st.container(key="ag-history-head"):
         cols = st.columns(widths, gap="small")
-        for col, label in zip(cols, ("Task", "Request", "Status", "Decision", "AI time", "Actions")):
+        for col, label in zip(cols, ("Task", "Request", "Status", "Decision", "AI time", "Actions"), strict=True):
             col.markdown(label)
     for task in tasks:
         version = _version_number(services.db, task)

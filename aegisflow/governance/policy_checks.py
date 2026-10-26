@@ -5,9 +5,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from ..document_processing import scan_injection
 from ..models import ClaimStatus, Plan, PolicyFinding, PolicyReport
 from ..redaction import find_secrets
-from ..document_processing import scan_injection
 
 _SECTION_ALIASES = {
     "summary": ("## summary", "# summary", "summary"),

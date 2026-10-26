@@ -5,16 +5,15 @@ from __future__ import annotations
 import sqlite3
 import threading
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command, Interrupt
 
 from config import Settings
+
 from ..database import Database
 from ..graph.root import build_root_graph
-from ..models import TaskStatus
 from ..redaction import sanitize_detail
 from ..skills_loader import Skill
 from ..state import initial_state
@@ -137,7 +136,6 @@ class WorkflowService:
                                 },
                             }
                         )
-        snapshot = None
         return RunResult(
             events=events,
             interrupted=interrupt_payload is not None,

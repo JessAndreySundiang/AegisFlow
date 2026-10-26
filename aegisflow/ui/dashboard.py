@@ -37,7 +37,7 @@ def _review_meta(services, task) -> tuple[str, str]:
     )
     if issues:
         meta += f" with {issues} issue(s)"
-    return f"Needs your decision", meta
+    return "Needs your decision", meta
 
 
 def render(services) -> None:

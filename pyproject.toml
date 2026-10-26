@@ -1,0 +1,39 @@
+[project]
+name = "aegisflow"
+version = "0.6.0"
+description = "Human-in-the-loop multi-agent governance prototype with hash-bound approval"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q --strict-markers"
+markers = []
+
+[tool.coverage.run]
+source = ["aegisflow"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "data", "ui_checks", ".opencode", "slides"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# E501: the codebase uses formatted long strings. B008: Streamlit calls in defaults.
+# UP042: the (str, Enum) pattern keeps stable str() values used in SQLite and the UI.
+# UP047: generic TypeVars are intentional for Python 3.10-compatible source.
+ignore = ["E501", "B008", "UP042", "UP047"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["aegisflow", "config"]

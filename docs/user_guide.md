@@ -165,7 +165,7 @@ To stop the server, press `Ctrl+C` in the terminal.
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
 
-The last recorded result is **67 passed**. Test duration varies by machine.
+The last recorded result is **76 passed**. Test duration varies by machine.
 
 ---
 

@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from config import Settings
+
 from ..agents.base import AgentFailure, call_agent, failure_result
 from ..database import Database
 from ..models import Plan, PlanSubtask, TaskStatus, utcnow_iso
 from ..skills_loader import Skill, render_agent_skills, skill_catalog
 from ..validation import ValidationError, validate_plan
-
 
 SYSTEM_PROMPT = """You are the AegisFlow Planner.
 Turn the user's request and file metadata into a minimal, dependency-aware plan.

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
 from config import Settings
+
 from ..database import Database
 from ..models import AgentStatus, ErrorClass, utcnow_iso
 from ..services.llm_service import (

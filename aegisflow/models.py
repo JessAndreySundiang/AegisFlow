@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Literal
 
@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 def utcnow_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
 def sha256_text(text: str) -> str:
@@ -216,7 +216,7 @@ class Plan(StrictModel):
     notes: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def coherent(self) -> "Plan":
+    def coherent(self) -> Plan:
         if not self.missing_information and not self.subtasks:
             raise ValueError("a plan needs at least one subtask unless it is blocked")
         if self.missing_information and self.subtasks:

@@ -94,7 +94,7 @@ class Settings:
 
     # -------------------------------------------------------------- factories
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         data_dir = Path(os.getenv("AEGISFLOW_DATA_DIR", "data"))
         if not data_dir.is_absolute():
             data_dir = PROJECT_ROOT / data_dir
@@ -127,7 +127,7 @@ class Settings:
         )
         return settings.validate()
 
-    def validate(self) -> "Settings":
+    def validate(self) -> Settings:
         warnings: list[str] = []
         fallback_reason: str | None = None
         mode = self.mode

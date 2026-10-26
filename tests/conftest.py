@@ -6,11 +6,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from config import Settings
 from aegisflow.database import Database
 from aegisflow.document_processing import document_to_state, save_and_extract
-from aegisflow.skills_loader import load_skills
 from aegisflow.services.workflow_service import WorkflowService
+from aegisflow.skills_loader import load_skills
+from config import Settings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = PROJECT_ROOT / "sample_data"

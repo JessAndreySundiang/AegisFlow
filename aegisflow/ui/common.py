@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import streamlit as st
 
 from config import Settings
+
 from ..models import TaskRecord, TaskStatus
 from . import components
 

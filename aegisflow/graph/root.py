@@ -8,7 +8,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
 from config import Settings
-from ..agents.base import AgentStatus
+
 from ..agents.planner import run_planner
 from ..approvals import (
     ApprovalError,
@@ -23,7 +23,7 @@ from ..models import (
     utcnow_iso,
 )
 from ..skills_loader import Skill
-from ..state import AegisState, initial_state
+from ..state import AegisState
 from ..validation import validate_request
 from .analysis_team import build_analysis_team
 from .assurance_team import build_assurance_team
@@ -394,7 +394,6 @@ def build_root_graph(
             )
         action = str(decision.get("decision", ""))
         feedback = str(decision.get("feedback", ""))
-        reviewer = str(decision.get("reviewer", "Local Reviewer"))
         if action == HumanDecision.APPROVE.value:
             try:
                 approval = assert_finalizable(db, state["task_id"], version_id, content_hash)

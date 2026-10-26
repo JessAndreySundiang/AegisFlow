@@ -3,7 +3,7 @@
 **System:** AegisFlow v0.1.0
 **Date:** 26 October 2026
 **Environment:** Windows, Python 3.13.7, project `.venv`, pytest 9.1.1
-**Result:** **67 passed, 0 failed** (`pytest tests\ -q`)
+**Result:** **76 passed, 0 failed** (`pytest tests\ -q`)
 
 ---
 
@@ -89,6 +89,7 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 | File | Tests | Coverage focus |
 |---|---:|---|
 | `test_models.py` | 7 | Plan id/dependency validation, blocked-plan rule, claim text, stable hash, status values |
+| `test_settings.py` | 9 | Mock default, four real-mode fallback paths, Gemini key alias, secret-free `describe()`, invalid mode/number |
 | `test_database.py` | 7 | Task lifecycle, invalid transitions, version numbering/hash, cascade delete, audit redaction, workload, counts |
 | `test_approvals.py` | 8 | Approve/finalize, agent refusal, duplicate, stale version, hash mismatch, content tamper, reject terminal, revision feedback/limit |
 | `test_document_processing.py` | 12 | Extensions, TXT/PDF/DOCX extraction, empty, corrupted, encrypted, unsupported, size limit, injection scan, delimiters, safe filenames, deletion |
@@ -97,7 +98,7 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 | `test_metrics.py` | 3 | Groundedness, citation coverage, time reduction (including negative) |
 | `test_e2e.py` | 13 | TC-01 to TC-13 |
 | `test_ui_smoke.py` | 3 | Streamlit pages + approval flow + rejection confirmation + revision flow |
-| **Total** | **67** | |
+| **Total** | **76** | |
 
 ---
 
@@ -106,7 +107,7 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
 ...................................................................                      [100%]
-67 passed in 12.13s
+76 passed in 6.79s
 ```
 
 A separate Streamlit server smoke test was run:
@@ -137,6 +138,19 @@ RESULT PASS
 Playwright and Chromium were installed in the local `.venv` for verification only; neither is listed in `requirements.txt`. The script loads the live mock-mode app at each width and writes full-page screenshots to `ui_checks/width_*.png`. It checks horizontal overflow, not accessibility or visual fidelity to the mockup.
 
 A separate browser spot-check navigated to **Review** and **History** at 1280 and 360 px (`ui_checks/review_1280.png`, `review_360.png`, `history_1280.png`, `history_360.png`). Review showed the version/hash header, the amber “Awaiting review” badge, and the read-only draft; History showed 44 px Delete/Export row actions with no clipping, and the collapsed sidebar at 360 px still reached every page.
+
+Engineering checks:
+
+```text
+$ .\.venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+$ .\.venv\Scripts\python.exe -m pytest --cov=aegisflow --cov-report=term-missing
+TOTAL                                     3267    612    984    232    76%
+76 passed
+```
+
+`pyproject.toml` configures lint, pytest, and branch coverage; `requirements-dev.txt` pins `ruff` and `pytest-cov`. CI (`.github/workflows/ci.yml`) runs lint, tests with a 75% coverage gate, and the theme/contrast checks on Windows and Ubuntu. Settings fallout is covered by `test_settings.py`: missing authorization, key, or model must fall back to mock, and `describe()` must never expose a key.
 
 ---
 

@@ -16,7 +16,7 @@ Rows 3–5 record the state at that phase. Their “Playwright missing / NOT RUN
 
 | Check | Command | Result |
 |---|---|---|
-| Unit + E2E + UI suite | `python -m pytest tests\ -q` | **67 passed, 0 failed** (12.13 s) |
+| Unit + E2E + UI suite | `python -m pytest tests\ -q` | **76 passed, 0 failed** (6.79 s) |
 | Theme tokens | `check_theme.py` | **PASS 16/16** |
 | Contrast (light & dark) | `check_contrast.py` | **PASS 40/40** |
 | Responsive layout | `check_responsive.py` (Playwright + Chromium) | **PASS** at 360, 768, 1280, 1536 px (`scrollWidth == innerWidth`) |
@@ -32,4 +32,11 @@ Published: <https://github.com/JessAndreySundiang/AegisFlow> (public, `main` bra
 - Removed the seven unused generic `.opencode/skills` packs (`ui-ux-pro-max`, `design`, `design-system`, `ui-styling`, `brand`, `slides`, `banner-design`): 172 files, 4.15 MB. AegisFlow's runtime loads only `skills/`; only `.opencode/skills/aegisflow-ui/` is referenced by the app, checks, and docs. The packs remain recoverable from git history (commit `d7ef2d9`) and the earlier “upstream preserved” note refers to that history.
 - Moved `design_preview.py` into `.opencode/skills/aegisflow-ui/` and added `.gitattributes` for LF normalization. No runtime code, tests, docs evidence, or demo data changed.
 
-Limitations reported honestly: no live provider call was executed, no axe accessibility audit or pixel-diff against the mockup PDF was run, and the screenshots were reviewed by eye rather than by an automated visual regression tool.
+## Engineering baseline — 26 October 2026
+
+- Added `pyproject.toml` (ruff + pytest + branch-coverage config), `requirements-dev.txt` (`ruff==0.17.2`, `pytest-cov==7.1.0`), `LICENSE` (MIT), `SECURITY.md`, and `.github/workflows/ci.yml` (Windows + Ubuntu: lint, tests with 75% coverage gate, theme, contrast).
+- `ruff check .` is clean after fixing import order, unused imports, unused locals, a strict `zip`, and specific `ValidationError` assertions. `UP042` (str-Enum) and `UP047` (PEP 695 generics) are ignored deliberately to keep serialized enum values unchanged.
+- Added `tests/test_settings.py` (9 tests) for the real-mode fallback matrix and secret-free `describe()`. Suite is now **76 passed**; coverage **76%** total (branch).
+- The README now carries a CI badge and a quality-checks section; the UI count references across the docs and deck were updated from 67 to 76.
+
+Limitations reported honestly: no live provider call was executed, no axe accessibility audit or pixel-diff against the mockup PDF was run, and the screenshots were reviewed by eye rather than by an automated visual regression tool. The CI workflow is committed and its status must be read from GitHub Actions, not assumed.

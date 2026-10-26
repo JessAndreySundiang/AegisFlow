@@ -8,6 +8,7 @@ local user who can edit the SQLite file.
 
 from __future__ import annotations
 
+import sqlite3
 import uuid
 from typing import Any
 
@@ -60,95 +61,102 @@ def record_decision(
     if decision_value == HumanDecision.REQUEST_REVISION and not feedback.strip():
         raise ApprovalError("Revision feedback is required.")
 
-    task = db.get_task(task_id)
-    if task is None:
-        raise ApprovalError(f"Task not found: {task_id}")
-    if task.status != TaskStatus.AWAITING_HUMAN_REVIEW:
-        raise ApprovalError(
-            f"Task is not awaiting human review (current status: {task.status.value})."
-        )
-
-    version = db.get_output_version(version_id)
-    if version is None or version.task_id != task_id:
-        raise ApprovalError("Output version does not belong to this task.")
-    if task.current_version_id != version_id:
-        raise ApprovalError(
-            "This version is stale. Only the current output version can be reviewed."
-        )
-    if sha256_text(version.content) != version.content_hash:
-        raise ApprovalError("Output content hash mismatch; the version is corrupted.")
-
-    latest = db.latest_review_for_version(version_id)
-    if latest is not None and latest.decision == HumanDecision.APPROVE:
-        raise ApprovalError("This version has already been approved.")
-    if latest is not None and latest.decision == decision_value:
-        raise ApprovalError("Duplicate decision for this version.")
-
-    if decision_value == HumanDecision.REQUEST_REVISION:
-        revision_count = sum(
-            1
-            for review in db.list_human_reviews(task_id)
-            if review.decision == HumanDecision.REQUEST_REVISION
-        )
-        if revision_count >= max_revisions:
+    # All checks and writes share one transaction so two concurrent decisions
+    # cannot both validate and then both persist an approval.
+    with db.transaction() as conn:
+        task = db.get_task(task_id)
+        if task is None:
+            raise ApprovalError(f"Task not found: {task_id}")
+        if task.status != TaskStatus.AWAITING_HUMAN_REVIEW:
             raise ApprovalError(
-                "Maximum revision cycles reached for this task. Approve or reject it."
+                f"Task is not awaiting human review (current status: {task.status.value})."
             )
 
-    new_status = {
-        HumanDecision.APPROVE: TaskStatus.APPROVED,
-        HumanDecision.REJECT: TaskStatus.REJECTED,
-        HumanDecision.REQUEST_REVISION: TaskStatus.REVISION_REQUESTED,
-    }[decision_value]
+        version = db.get_output_version(version_id)
+        if version is None or version.task_id != task_id:
+            raise ApprovalError("Output version does not belong to this task.")
+        if task.current_version_id != version_id:
+            raise ApprovalError(
+                "This version is stale. Only the current output version can be reviewed."
+            )
+        if sha256_text(version.content) != version.content_hash:
+            raise ApprovalError("Output content hash mismatch; the version is corrupted.")
 
-    allowed = ALLOWED_TRANSITIONS.get(task.status, set())
-    if new_status not in allowed:
-        raise ApprovalError(
-            f"Invalid transition: {task.status.value} -> {new_status.value}"
-        )
+        latest = db.latest_review_for_version(version_id)
+        if latest is not None and latest.decision == HumanDecision.APPROVE:
+            raise ApprovalError("This version has already been approved.")
+        if latest is not None and latest.decision == decision_value:
+            raise ApprovalError("Duplicate decision for this version.")
 
-    review_id = str(uuid.uuid4())
-    now = utcnow_iso()
-    detail = (
-        f"decision={decision_value.value}; version={version.version_number}; "
-        f"hash={version.content_hash[:12]}...; reviewer={sanitize_detail(reviewer)}"
-    )
-    with db.transaction() as conn:
-        conn.execute(
-            """INSERT INTO human_reviews
-               (id, task_id, version_id, content_hash, decision, feedback,
-                reviewer, actor, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                review_id,
-                task_id,
-                version_id,
-                version.content_hash,
-                decision_value.value,
-                sanitize_detail(feedback),
-                reviewer,
-                actor,
-                now,
-            ),
+        if decision_value == HumanDecision.REQUEST_REVISION:
+            revision_count = sum(
+                1
+                for review in db.list_human_reviews(task_id)
+                if review.decision == HumanDecision.REQUEST_REVISION
+            )
+            if revision_count >= max_revisions:
+                raise ApprovalError(
+                    "Maximum revision cycles reached for this task. Approve or reject it."
+                )
+
+        new_status = {
+            HumanDecision.APPROVE: TaskStatus.APPROVED,
+            HumanDecision.REJECT: TaskStatus.REJECTED,
+            HumanDecision.REQUEST_REVISION: TaskStatus.REVISION_REQUESTED,
+        }[decision_value]
+
+        allowed = ALLOWED_TRANSITIONS.get(task.status, set())
+        if new_status not in allowed:
+            raise ApprovalError(
+                f"Invalid transition: {task.status.value} -> {new_status.value}"
+            )
+
+        review_id = str(uuid.uuid4())
+        now = utcnow_iso()
+        detail = (
+            f"decision={decision_value.value}; version={version.version_number}; "
+            f"hash={version.content_hash[:12]}...; reviewer={sanitize_detail(reviewer)}"
         )
-        conn.execute(
-            """UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?""",
-            (new_status.value, now, task_id),
-        )
-        conn.execute(
-            """INSERT INTO audit_log
-               (id, task_id, event_type, actor, rule_id, detail, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (
-                str(uuid.uuid4()),
-                task_id,
-                "human_decision",
-                actor,
-                "GR-01",
-                detail,
-                now,
-            ),
-        )
+        try:
+            conn.execute(
+                """INSERT INTO human_reviews
+                   (id, task_id, version_id, content_hash, decision, feedback,
+                    reviewer, actor, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    review_id,
+                    task_id,
+                    version_id,
+                    version.content_hash,
+                    decision_value.value,
+                    sanitize_detail(feedback),
+                    reviewer,
+                    actor,
+                    now,
+                ),
+            )
+            conn.execute(
+                """UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?""",
+                (new_status.value, now, task_id),
+            )
+            conn.execute(
+                """INSERT INTO audit_log
+                   (id, task_id, event_type, actor, rule_id, detail, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    str(uuid.uuid4()),
+                    task_id,
+                    "human_decision",
+                    actor,
+                    "GR-01",
+                    detail,
+                    now,
+                ),
+            )
+        except sqlite3.IntegrityError as exc:
+            raise ApprovalError(
+                "This decision was already recorded for this version."
+            ) from exc
 
     return ApprovalRecord(
         id=review_id,

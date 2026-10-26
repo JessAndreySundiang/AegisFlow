@@ -75,7 +75,9 @@ The UI is the only caller. It must pass `actor="human:streamlit"` (the module de
 
 ### 3.2 Atomic write
 
-One transaction inserts the `human_reviews` row, updates `tasks.status`, and inserts a `human_decision` audit row. Either all three succeed or none do. Feedback is redacted before storage.
+One transaction performs every check, inserts the `human_reviews` row, updates `tasks.status`, and inserts a `human_decision` audit row. Either all of it succeeds or none does. Feedback is redacted before storage.
+
+The checks live inside that transaction so two concurrent decisions cannot both validate and then both commit. A unique index, `uq_reviews_version_decision`, on `(version_id, decision)` is the database-level backstop for concurrent writers and direct SQL. Older databases that already contain duplicate rows skip index creation instead of failing to start.
 
 ### 3.3 Resulting status
 
@@ -204,7 +206,7 @@ The UI never offers a generic “resume” button. Resuming without a persisted 
 | Approval of wrong version | Version id + current version check | — |
 | Local SQLite tampering | Hash detects content edits; audit records | Not cryptographically tamper-evident |
 | UI crash between write and resume | Decision is already durable; recovery path documented | Operator must retry resume |
-| Race between two approvals | SQLite transaction + latest-review check; single-user app | No multi-user locking by design |
+| Race between two approvals | Checks and writes share one transaction; unique `(version_id, decision)` index | Two concurrent approvals produce exactly one record (tested) |
 | Impersonation of reviewer | Reviewer name is free text | No authentication in v1 |
 
 ### Explicit non-guarantees
@@ -248,6 +250,8 @@ These are acceptable for a single-user academic prototype and are documented as 
 | `test_stored_content_tamper_rejected` | Tamper detection |
 | `test_reject_is_terminal` | Rejection terminal |
 | `test_revision_requires_feedback_and_reaches_limit` | Feedback + budget |
+| `test_concurrent_approvals_record_exactly_one` | Race hardening: one winner, one refusal |
+| `test_unique_review_index_exists` / `test_unique_index_rejects_direct_duplicate` | Database backstop |
 | TC-02 | No persisted decision → escalate |
 | TC-03 | Edit invalidates prior approval |
 | TC-04 | Rejection blocks export |

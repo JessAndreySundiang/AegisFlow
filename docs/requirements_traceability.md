@@ -23,7 +23,7 @@
 | `SKILL.md` packages | 3 | 6 | **Exceeds** |
 | Governance rules | 5 | 8 | **Exceeds** |
 | Identified risks | 5 | 9 | **Exceeds** |
-| Test cases | 5 | 13 E2E + 60 unit/integration + 3 UI = **76** | **Exceeds** |
+| Test cases | 5 | 13 E2E + 74 unit/integration + 3 UI = **90** | **Exceeds** |
 | NIST AI RMF worksheet | 4 functions | GOVERN, MAP, MEASURE, MANAGE | **Complete** |
 | Human approval explanation | where + why | Design doc + enforced gate + UI | **Verified** |
 | Presentation | ≤ 15 minutes | Script + 16-slide deck | **Complete** |
@@ -63,7 +63,7 @@ The implementation deliberately exceeds the minimum counts while keeping every e
 
 | # | Deliverable | Required minimum | AegisFlow artefact | Verification | Status |
 |---:|---|---|---|---|---|
-| 1 | Working agentic AI prototype | Runs end to end | `app.py`, `aegisflow/`, `requirements.txt` | Manual smoke; 76 tests; server health `ok` | **Verified in mock mode** |
+| 1 | Working agentic AI prototype | Runs end to end | `app.py`, `aegisflow/`, `requirements.txt` | Manual smoke; 90 tests; server health `ok` | **Verified in mock mode** |
 | 2 | Project description | Clear problem/scope | `README.md`; `docs/final_report.md` | Document review | **Complete** |
 | 3 | AI agents/roles | 3 | `aegisflow/agents/`: Planner, Analyst, Verifier, Writer, Reviewer; deterministic Policy Checker | TC-01, TC-13; architecture table | **6 implemented** |
 | 4 | `SKILL.md` files | 3 | `skills/task-planning`, `document-extraction`, `evidence-verification`, `report-writing`, `quality-review`, `untrusted-content-handling` | `test_skills_loader.py` (5 tests) | **6 implemented and verified** |
@@ -71,7 +71,7 @@ The implementation deliberately exceeds the minimum counts while keeping every e
 | 6 | System diagram | At least one | Mermaid context, container, and graph diagrams in `docs/architecture.md`; workflow sequence in `docs/workflow.md` | Document review | **Complete** |
 | 7 | NIST AI RMF worksheet | All four functions | `docs/nist_ai_rmf_worksheet.md` | Document review; statuses separate verified/unverified | **Complete** |
 | 8 | Risk assessment | 5 risks | `docs/risk_assessment.md` — R-01 to R-09 with L×I scores, controls, residual risk, owner | Document review; tests mapped per risk | **9 risks** |
-| 9 | Testing | 5 cases | `docs/testing.md`; 13 E2E (TC-01–TC-13), 60 unit/integration, 3 UI = **76** | Recorded `76 passed` | **Exceeds** |
+| 9 | Testing | 5 cases | `docs/testing.md`; 13 E2E (TC-01–TC-13), 74 unit/integration, 3 UI = **90** | Recorded `90 passed` | **Exceeds** |
 | 10 | AI governance rules | 5 | `docs/governance_rules.md`; `aegisflow/governance/rules.py` — GR-01 to GR-08 | `test_governance.py`; E2E rule assertions | **8 rules** |
 | 11 | Human approval — where and why | Explanation + implementation | `docs/human_approval.md`; `aegisflow/approvals.py`; `aegisflow/ui/review_page.py` | TC-01–TC-05, TC-10; AppTest UI flow | **Verified** |
 | 12 | Final presentation | ≤ 15 minutes | `docs/presentation_script.md`; `docs/slides.md`; `slides/aegisflow_deck.html` | Timing plan 15:00; deck opens locally | **Complete** |
@@ -136,7 +136,7 @@ The master prompt contains 15 acceptance criteria. Their status:
 | 10 | History, decisions, audit persist in SQLite | **Verified** | DB tests; TC-12 |
 | 11 | Finalized output can be exported | **Verified** | TC-01 Markdown/TXT assertions |
 | 12 | Mock mode works without credentials | **Verified** | Full suite runs without keys |
-| 13 | Tests cover routing, hierarchy, workflow, governance, approval | **Verified** | 76 tests |
+| 13 | Tests cover routing, hierarchy, workflow, governance, approval | **Verified** | 90 tests |
 | 14 | All 12 SIP10 deliverables exist and are consistent | **Complete** | This document |
 | 15 | No feature falsely described as implemented or tested | **Maintained** | Verification matrix below |
 

@@ -22,6 +22,13 @@ from .models import FileMeta, FileStatus
 
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".docx"}
 MAX_EXTRACTED_CHARS = 200_000
+# Extraction guards: a small compressed file can expand into a very large
+# document, so page, entry, size, and compression-ratio limits are enforced
+# before the expensive parsers run.
+MAX_PDF_PAGES = 200
+MAX_DOCX_ENTRIES = 2_000
+MAX_DOCX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
+MAX_DOCX_COMPRESSION_RATIO = 100
 
 _INJECTION_PATTERNS = [
     r"(?i)\bignore\s+(all\s+)?(previous|prior|above)\s+instructions?\b",
@@ -80,6 +87,30 @@ def _decode_text(data: bytes) -> tuple[str, str]:
     return data.decode("utf-8", errors="replace"), "utf-8-replace"
 
 
+def _docx_archive_problem(archive: zipfile.ZipFile) -> str | None:
+    """Return a message when a DOCX archive looks like a decompression bomb."""
+    infos = archive.infolist()
+    if len(infos) > MAX_DOCX_ENTRIES:
+        return (
+            f"DOCX archive has {len(infos)} entries; the limit is {MAX_DOCX_ENTRIES}."
+        )
+    total = sum(info.file_size for info in infos)
+    if total > MAX_DOCX_UNCOMPRESSED_BYTES:
+        limit_mb = MAX_DOCX_UNCOMPRESSED_BYTES // (1024 * 1024)
+        return (
+            f"DOCX archive expands to {total // (1024 * 1024)} MB; the limit is "
+            f"{limit_mb} MB."
+        )
+    compressed = sum(info.compress_size for info in infos) or 1
+    ratio = total / compressed
+    if ratio > MAX_DOCX_COMPRESSION_RATIO:
+        return (
+            f"DOCX archive compression ratio is {ratio:.0f}:1; the limit is "
+            f"{MAX_DOCX_COMPRESSION_RATIO}:1."
+        )
+    return None
+
+
 def _extract_pdf(path: Path) -> ExtractedDocument:
     data = path.read_bytes()
     digest = sha256_bytes(data)
@@ -110,6 +141,19 @@ def _extract_pdf(path: Path) -> ExtractedDocument:
                 text="",
                 status=FileStatus.ENCRYPTED,
                 message="PDF is password-protected and cannot be read.",
+                sha256=digest,
+                size_bytes=len(data),
+            )
+        page_count = document.page_count
+        if page_count > MAX_PDF_PAGES:
+            return ExtractedDocument(
+                filename=path.name,
+                text="",
+                page_count=page_count,
+                status=FileStatus.TOO_LARGE,
+                message=(
+                    f"PDF has {page_count} pages; the limit is {MAX_PDF_PAGES}."
+                ),
                 sha256=digest,
                 size_bytes=len(data),
             )
@@ -168,6 +212,16 @@ def _extract_docx(path: Path) -> ExtractedDocument:
                     text="",
                     status=FileStatus.CORRUPTED,
                     message="ZIP archive is not a DOCX document.",
+                    sha256=digest,
+                    size_bytes=len(data),
+                )
+            archive_problem = _docx_archive_problem(archive)
+            if archive_problem is not None:
+                return ExtractedDocument(
+                    filename=path.name,
+                    text="",
+                    status=FileStatus.TOO_LARGE,
+                    message=archive_problem,
                     sha256=digest,
                     size_bytes=len(data),
                 )

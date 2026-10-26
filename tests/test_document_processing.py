@@ -68,6 +68,40 @@ def test_size_limit(tmp_path):
     assert stored == ""
 
 
+def test_docx_compression_bomb_is_rejected(tmp_path):
+    import zipfile
+
+    path = tmp_path / "bomb.docx"
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("word/document.xml", b"\0" * (5 * 1024 * 1024))
+        archive.writestr("word/styles.xml", "<styles/>")
+    result = extract_document(path, "bomb.docx")
+    assert result.status == FileStatus.TOO_LARGE
+    assert "compression ratio" in result.message
+
+
+def test_pdf_page_limit_is_enforced(tmp_path):
+    import pymupdf
+
+    path = tmp_path / "many_pages.pdf"
+    document = pymupdf.open()
+    for _ in range(201):
+        document.new_page()
+    document.save(path)
+    document.close()
+
+    result = extract_document(path, "many_pages.pdf")
+    assert result.status == FileStatus.TOO_LARGE
+    assert "201 pages" in result.message
+
+
+def test_pdf_signature_mismatch_is_corrupted(tmp_path):
+    path = tmp_path / "not_really.pdf"
+    path.write_bytes(b"This is plain text, not a PDF.")
+    result = extract_document(path, "not_really.pdf")
+    assert result.status == FileStatus.CORRUPTED
+
+
 def test_injection_scan():
     text = (
         "Normal line.\n"

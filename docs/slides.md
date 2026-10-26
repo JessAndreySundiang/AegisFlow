@@ -4,7 +4,7 @@ theme: default
 paginate: true
 size: 16:9
 header: "AegisFlow · SIP10 Final Project"
-footer: "Working prototype · mock mode verified · 76 tests passing"
+footer: "Working prototype · mock mode verified · 90 tests passing"
 style: |
   :root {
     --ink: #0f172a;
@@ -66,7 +66,7 @@ style: |
 ## A governed hierarchical multi-agent system for document tasks — with human-in-the-loop approval
 
 **SIP10 Final Project** · 26 October 2026  
-Working prototype · mock mode verified · **76 tests passing**
+Working prototype · mock mode verified · **90 tests passing**
 
 <!--
 SPEAKER NOTES
@@ -124,7 +124,7 @@ Give one concrete example for each. Then transition: a prompt is advisory; a con
 - **6** SKILL.md packages
 - **8** governance rules
 - **9** risks
-- **76** tests (13 E2E + 60 unit/integration + 3 UI)
+- **90** tests (13 E2E + 74 unit/integration + 3 UI)
 - Hash-bound approval
 - GOVERN / MAP / MEASURE / MANAGE
 
@@ -409,7 +409,7 @@ The UI is backed by the project-scoped aegisflow-ui skill; technical tables and 
 
 ---
 
-# Tests: 76 passed
+# Tests: 90 passed
 
 <div class="three">
 <div class="card ok">
@@ -428,7 +428,7 @@ The UI is backed by the project-scoped aegisflow-ui skill; technical tables and 
 
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
-76 passed in 6.79s
+90 passed in 19.21s
 ```
 
 <p class="small">Proven: approval, tamper detection, injection, routing, escalation, audit redaction.<br>
@@ -480,7 +480,7 @@ Planner → Orchestrator → 3 executors → Reviewer → Human → Output
 
 - 6 agents · 6 skills · 8 governance rules · 9 risks
 - Approval bound to the exact version and SHA-256 hash
-- 76 automated tests · mock mode verified
+- 90 automated tests · mock mode verified
 - Real-provider mode implemented but **not verified**
 
 ### Thank you — questions?

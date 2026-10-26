@@ -3,7 +3,7 @@
 **Delivery limit:** 15 minutes maximum (Q&A after, if permitted)  
 **Deck:** [`slides/aegisflow_deck.html`](../slides/aegisflow_deck.html) · Marp source: [`slides.md`](slides.md)  
 **Mode for the live demo:** mock mode (deterministic, local, no network)  
-**Status to state on stage:** 76 automated tests pass; real-provider mode is implemented but **not verified**.
+**Status to state on stage:** 90 automated tests pass; real-provider mode is implemented but **not verified**.
 
 > **Speaker rule:** never describe mock output as real AI analysis. The UI labels it SIMULATED for a reason. If the demo fails, use the fallback in section 10 and say so plainly.
 
@@ -72,11 +72,11 @@ If the demo runs long, shorten slides 9–11 to the one-line rule summaries and 
 
 > “The course asks for a pipeline, a hierarchy, at least three agents and three skills, five governance rules, five risks, five tests, a NIST worksheet, and a human approval point.
 >
-> AegisFlow implements all twelve deliverables: six agents and six SKILL.md packages, eight governance rules, nine risks, six end-to-end scenarios plus seven more, and 76 automated tests in total.
+> AegisFlow implements all twelve deliverables: six agents and six SKILL.md packages, eight governance rules, nine risks, six end-to-end scenarios plus seven more, and 90 automated tests in total.
 >
 > The basic workflow maps literally: Planner first, Orchestrator next, three executor roles, Reviewer, human approval, final output. The added team leads make the hierarchy real without changing that required chain.”
 
-**Cue:** do not read every row. Point to “6 agents / 6 skills / 8 rules / 9 risks / 76 tests”.
+**Cue:** do not read every row. Point to “6 agents / 6 skills / 8 rules / 9 risks / 90 tests”.
 
 ---
 
@@ -324,20 +324,20 @@ finalize → export re-check → approved Markdown/TXT
 
 | Level | Tests |
 |---|---:|
-| Unit / integration | 60 |
+| Unit / integration | 74 |
 | End-to-end scenarios TC-01–TC-13 | 13 |
 | Streamlit UI flows (approval, rejection, revision) | 3 |
-| **Total** | **76 passed** |
+| **Total** | **90 passed** |
 
 **Say**
 
-> “The recorded run is 76 passed, zero failed, in about 7 seconds. The suite uses the real compiled LangGraph, real SQLite, real approval logic, and a real LangChain chat-model subclass for deterministic mock output. It is not a stub pipeline.
+> “The recorded run is 90 passed, zero failed, in about 19 seconds. The suite uses the real compiled LangGraph, real SQLite, real approval logic, and a real LangChain chat-model subclass for deterministic mock output. It is not a stub pipeline.
 >
 > The tests prove the happy path, rejection, new-version invalidation, tamper detection, injection handling, missing input, mixed unreadable files, bounded escalation, audit redaction, selective routing, and a real approval through Streamlit’s test harness.
 >
 > What they do not prove: live provider quality or latency, browser CSS/accessibility, OCR, multi-user concurrency, or disk-failure recovery. Those are listed as not tested, not hand-waved.”
 
-**Cue:** if pressed on “76 tests” ask them to run the command; show `docs/testing.md`.
+**Cue:** if pressed on “90 tests” ask them to run the command; show `docs/testing.md`.
 
 ---
 
@@ -373,7 +373,7 @@ finalize → export re-check → approved Markdown/TXT
 > **Generation is probabilistic. Authority is not.**
 >
 > Planner → Orchestrator → 3 executors → Reviewer → Human → Output  
-> 76 automated tests · 8 governance rules · 9 risks · 6 skills · human approval bound to the exact version and hash
+> 90 automated tests · 8 governance rules · 9 risks · 6 skills · human approval bound to the exact version and hash
 
 **Say**
 
@@ -446,7 +446,7 @@ A: Yes:
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
-The recorded result is 76 passed.
+The recorded result is 90 passed.
 
 **Q: Is the mock output meaningful?**  
 A: It is deterministic scripted output for testing orchestration, not a claim of analysis quality. The UI says SIMULATED on every page and every export.

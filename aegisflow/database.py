@@ -176,6 +176,25 @@ class Database:
     def initialize(self) -> None:
         with self._lock, self.conn:
             self.conn.executescript(SCHEMA)
+            self._ensure_review_uniqueness()
+
+    def _ensure_review_uniqueness(self) -> None:
+        """Add the approval uniqueness index when existing data allows it.
+
+        The approval layer also rejects duplicates before writing. This index is
+        the database-level backstop for concurrent writers and direct SQL. If an
+        older database already contains duplicate rows, the index is skipped
+        instead of preventing startup.
+        """
+        duplicate = self.conn.execute(
+            "SELECT 1 FROM human_reviews GROUP BY version_id, decision "
+            "HAVING COUNT(*) > 1 LIMIT 1"
+        ).fetchone()
+        if duplicate is None:
+            self.conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_reviews_version_decision "
+                "ON human_reviews(version_id, decision)"
+            )
 
     def close(self) -> None:
         with self._lock:

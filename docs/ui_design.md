@@ -46,6 +46,7 @@ The rail is deliberately **not** pure black: it is a deep teal-navy gradient wit
 - **Status badge** — icon + label, tokenized by status class.
 - **Decision panel** — reviewer name, consequence text per option, version-named actions, acknowledgement and terminal confirmation.
 - **Draft view** — section-aware rendering of the stored Markdown: title, SIMULATED badge, lead summary, findings with citation chips, sources and limitations, plus the exact raw text in an expander.
+- **Attention callout** — an amber-edged list for decisions, owners, dates, and amounts the source states; omitted when the source has none.
 - **History row** — task id, request, badge, decision, AI time, and one row action.
 - **Cards** — white surface, subtle border, soft shadow; no nested card borders.
 - **Skip link** — first focusable element, jumps to `#ag-main`.

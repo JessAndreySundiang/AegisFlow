@@ -23,13 +23,25 @@ not invent facts, perform external actions, or hide uncertainty.
 ## Procedure
 1. Start with a title and a one-line purpose.
 2. If the run is simulated, include `**SIMULATED OUTPUT**` immediately below the title.
-3. Write a short summary using only verified claims.
-4. Write key findings as bullet lines. Every bullet ends with `[S#]` or
-   `[UNVERIFIED: reason]`.
-5. Add a Sources section mapping each `[S#]` to filename, location, and excerpt.
-6. Add a Limitations / Unverified section listing gaps, conflicts, and assumptions.
-7. If revision feedback is present, address it explicitly and keep source references.
-8. Match the requested format: Markdown headings or plain TXT headings.
+3. Add a `**Source:**` line with the filename and page count when known.
+4. Write a 2-4 sentence summary for a busy manager: what the document is, the
+   most important point, and what the reader should notice or decide. Lead with
+   the substance, never with a count.
+5. Write key findings as complete sentences. Every item ends with `[S#]` or
+   `[UNVERIFIED: reason]`. Group under at most three short theme headings when
+   the source has clear themes.
+6. Add `What needs attention` only for decisions, owners, dates, or amounts the
+   source actually states; omit the section when there are none.
+7. Add a Sources section mapping each `[S#]` to filename, location, and excerpt.
+8. Add a Limitations / Unverified section listing gaps, conflicts, and assumptions.
+9. If revision feedback is present, address it explicitly and keep source references.
+10. Match the requested format: Markdown headings or plain TXT headings.
+
+## Voice
+- Plain language, active voice, one idea per sentence, at most 25 words.
+- No meta-commentary: never write "This deliverable", "the document states",
+  "it is important to note", or "in conclusion".
+- No invented themes, owners, dates, amounts, or next steps.
 
 ## Output format
 Return JSON with `draft`, `claims`, and `limitations`. The draft must contain the

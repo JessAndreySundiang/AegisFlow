@@ -17,6 +17,7 @@ _SECTION_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 _ITEM_RE = re.compile(r"^\s*(?:[-*]|\d+\.)\s+(.*)$")
 _CITE_RE = re.compile(r"\[(S\d+)\]")
 _REQUEST_RE = re.compile(r"^\*\*Request:\*\*\s*(.*)$")
+_SOURCE_RE = re.compile(r"^\*\*Source:\*\*\s*(.*)$")
 
 
 def parse_draft(draft: str) -> tuple[str, str, list[tuple[str, str]]]:
@@ -93,6 +94,15 @@ def render_draft(
             f'<p class="ag-draft__meta">Request: {html.escape(request)}</p>',
             unsafe_allow_html=True,
         )
+    source = next(
+        (match.group(1) for line in meta.splitlines() if (match := _SOURCE_RE.match(line))),
+        "",
+    )
+    if source:
+        st.markdown(
+            f'<p class="ag-draft__meta">Source: {html.escape(source)}</p>',
+            unsafe_allow_html=True,
+        )
     for line in meta.splitlines():
         if line.startswith(">"):
             st.markdown(
@@ -113,6 +123,9 @@ def render_draft(
         elif "finding" in lowered:
             _section(name)
             _list(_items(content), "ag-draft__findings")
+        elif "attention" in lowered:
+            _section(name)
+            _list(_items(content), "ag-draft__attention")
         elif "source" in lowered:
             _section(name)
             _list(_items(content), "ag-draft__sources")

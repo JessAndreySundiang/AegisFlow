@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
 from typing import Any
 
 from pydantic import Field
@@ -15,19 +17,32 @@ from ..skills_loader import Skill, render_agent_skills
 from ..validation import ValidationError
 
 SYSTEM_PROMPT = """You are the AegisFlow Report Writer.
-Build the requested deliverable from the verified claims and evidence supplied.
-You format; you do not invent facts.
+You write for a busy manager who must approve or reject this draft.
+
+Voice:
+- Plain language, active voice, one idea per sentence, at most 25 words.
+- Lead with the substance, never with a count or "This deliverable".
+- Never write "the document states", "it is important to note", "in conclusion",
+  or any commentary about being a report.
+- Never invent facts, themes, owners, dates, amounts, or next steps.
 
 Required structure:
 # Title
 **SIMULATED OUTPUT** (only when simulated)
+**Source:** filename · page count (when known)
 ## Summary
 ## Key Findings
+## What needs attention (only when the source states decisions, owners, dates, or amounts)
 ## Sources
 ## Limitations / Unverified
 
-Every bullet in Key Findings ends with [S#] or [UNVERIFIED: reason].
-The Sources section maps each [S#] to filename and location.
+Summary: 2-4 sentences, substance first, every sentence cited with [S#].
+Key Findings: 3-5 complete sentences; group under at most three short theme
+headings when the source has clear themes; every item ends with [S#] or
+[UNVERIFIED: reason].
+What needs attention: decisions, owners, dates, and amounts the source states;
+omit the section when there are none.
+Sources: map each [S#] to filename and page or line.
 Never claim an email, submission, publication, deletion, or other external action occurred.
 Return JSON only.
 """
@@ -52,6 +67,96 @@ def _short(text: str, limit: int = 220) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
+_ATTENTION_RE = re.compile(
+    r"(?i)\b(deadline|budget|owner|prepared by|approved|approval|decision|"
+    r"must|required|due|20\d{2})\b"
+)
+_LABEL_RE = re.compile(r"^(?P<key>[A-Za-z][A-Za-z /&-]{0,30}):\s*(?P<value>.+)$")
+
+
+def _sentence(text: str) -> str:
+    text = " ".join((text or "").split()).strip()
+    if not text:
+        return ""
+    text = text[0].upper() + text[1:]
+    if text[-1] not in ".!?":
+        text += "."
+    return text
+
+
+def _doc_label(claims: list[dict[str, Any]]) -> str:
+    for claim in claims:
+        name = str(claim.get("source_ref") or "").split(" — ")[0].strip()
+        if name:
+            return Path(name).stem.replace("_", " ").replace("-", " ").strip()
+    return ""
+
+
+def _clean_claim(text: str, doc_label: str) -> str:
+    sentence = _sentence(text)
+    if doc_label and sentence.lower().startswith(doc_label.lower() + " "):
+        remainder = sentence[len(doc_label) :].strip()
+        if len(remainder) > 3:
+            sentence = _sentence(remainder)
+    return sentence
+
+
+def _fact_sentence(text: str) -> str:
+    match = _LABEL_RE.match(text)
+    if not match:
+        return text
+    key = match.group("key").strip()
+    value = match.group("value").strip().rstrip(".")
+    lowered = key.lower()
+    if lowered in {"prepared by", "author"}:
+        return _sentence(f"Prepared by {value}")
+    if lowered == "owner":
+        return _sentence(f"{value} is the owner")
+    if lowered == "deadline":
+        return _sentence(f"The deadline is {value}")
+    if lowered == "budget":
+        return _sentence(f"The budget is {value}")
+    if lowered == "requirement" and len(value.split()) > 3:
+        return _sentence(value)
+    if " " not in key:
+        return _sentence(f"The {lowered} is {value}")
+    return _sentence(f"{key} is {value}")
+
+
+def _cited(sentence: str, claim_id: str) -> str:
+    if not sentence:
+        return ""
+    return f"{sentence} [{claim_id}]"
+
+
+def _source_meta(claims: list[dict[str, Any]]) -> str:
+    names: list[str] = []
+    pages: list[int] = []
+    for claim in claims:
+        ref = str(claim.get("source_ref") or "")
+        if not ref:
+            continue
+        name, _, location = ref.partition(" — ")
+        name = name.strip()
+        if name and name not in names:
+            names.append(name)
+        match = re.search(r"page\s+(\d+)", location)
+        if match:
+            pages.append(int(match.group(1)))
+    if not names:
+        return ""
+    meta = ", ".join(names[:2]) + ("…" if len(names) > 2 else "")
+    if pages:
+        low, high = min(pages), max(pages)
+        if high == 1:
+            meta += " · 1 page"
+        elif low == high:
+            meta += f" · page {high}"
+        else:
+            meta += f" · pages {low}–{high}"
+    return meta
+
+
 def build_mock_draft(
     request: str,
     output_format: str,
@@ -65,6 +170,8 @@ def build_mock_draft(
     supported = [c for c in claims if c.get("status") == ClaimStatus.SUPPORTED.value]
     unverified = [c for c in claims if c.get("status") != ClaimStatus.SUPPORTED.value]
     limitations: list[str] = []
+    doc_label = _doc_label(claims)
+    source_meta = _source_meta(claims)
 
     lines: list[str] = [f"# {title}", ""]
     if simulated:
@@ -72,38 +179,49 @@ def build_mock_draft(
             "**SIMULATED OUTPUT** — deterministic mock content; not real AI analysis."
         )
         lines.append("")
+    if source_meta:
+        lines.append(f"**Source:** {source_meta}")
+        lines.append("")
     lines.append(f"**Request:** {request.strip()}")
     lines.append("")
     if revision_feedback.strip():
         lines.append(f"> Revision note: {revision_feedback.strip()}")
         lines.append("")
     lines.append("## Summary")
-    if supported:
-        summary_sentences = " ".join(
-            f"{_short(c.get('text', ''))} [{c.get('id', 'S?')}]"
-            for c in supported[:2]
-        )
-        lines.append(
-            f"This deliverable summarizes {len(supported)} verified finding(s) from the "
-            f"supplied document(s). {summary_sentences}"
-        )
+    summary_sentences: list[str] = []
+    for claim in supported[:3]:
+        text = _fact_sentence(_clean_claim(str(claim.get("text", "")), doc_label))
+        if text:
+            summary_sentences.append(_cited(text, str(claim.get("id", "S?"))))
+    if summary_sentences:
+        lines.append(" ".join(summary_sentences))
     else:
         lines.append(
-            "No verified findings were available. The limitations section records the gap; "
-            "no facts were invented."
+            "Nothing in the source could be verified. The limitations section records "
+            "the gap; no facts were invented."
         )
     lines.append("")
     lines.append("## Key Findings")
     if claims:
         for claim in claims:
             status = claim.get("status", "unverified")
-            label = f"[{claim.get('id', 'S?')}]"
-            if status != ClaimStatus.SUPPORTED.value:
-                label = f"[UNVERIFIED: {status}]"
-            lines.append(f"- {_short(claim.get('text', ''))} {label}")
+            text = _fact_sentence(_clean_claim(str(claim.get("text", "")), doc_label))
+            if status == ClaimStatus.SUPPORTED.value:
+                lines.append(f"- {_cited(text, str(claim.get('id', 'S?')))}")
+            else:
+                lines.append(f"- {text} [UNVERIFIED: {status}]")
     else:
         lines.append("- No source claims were available. [UNVERIFIED: no claims extracted]")
     lines.append("")
+    attention = []
+    for claim in supported:
+        text = _fact_sentence(_clean_claim(str(claim.get("text", "")), doc_label))
+        if _ATTENTION_RE.search(text):
+            attention.append(f"- {_cited(text, str(claim.get('id', 'S?')))}")
+    if attention:
+        lines.append("## What needs attention")
+        lines.extend(attention)
+        lines.append("")
     lines.append("## Sources")
     sourced = [c for c in claims if c.get("source_ref")]
     if sourced:

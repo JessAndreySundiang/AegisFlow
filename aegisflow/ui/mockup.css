@@ -109,6 +109,11 @@
 .ag-draft__findings li, .ag-draft__sources li { line-height: 1.55; max-width: 72ch; }
 .ag-draft__sources { font-size: .85rem; color: var(--ag-muted); }
 .ag-draft__limits { font-size: .88rem; color: var(--ag-muted); }
+.ag-draft__attention {
+  margin: 0; padding: .6rem .9rem .6rem 1.8rem; display: grid; gap: .4rem;
+  border-left: 3px solid var(--ag-warning-border); border-radius: 8px;
+  background: var(--ag-warning-bg); font-size: .92rem;
+}
 .ag-cite {
   display: inline-flex; align-items: center; margin-left: .3rem; padding: 0 .4rem;
   border: 1px solid var(--ag-border-subtle); border-radius: 999px;

@@ -6,7 +6,7 @@ A governed, hierarchical multi-agent document-task prototype built with **LangGr
 
 AegisFlow turns uploaded PDF/TXT/DOCX files into a reviewed deliverable through a visible chain of specialist agents. It is designed around one rule: **no output is finalized, exported as final, or marked complete without a human approval bound to the exact output version and content hash.**
 
-> **Status: working prototype, mock mode verified.** All 90 automated tests pass. Real LLM mode is implemented but **not verified** because real mode was not enabled and no live provider call was made. See [Verification status](#verification-status).
+> **Status: working prototype, mock mode verified.** All 92 automated tests pass. Real LLM mode is implemented but **not verified** because real mode was not enabled and no live provider call was made. See [Verification status](#verification-status).
 >
 > **Repository:** <https://github.com/JessAndreySundiang/AegisFlow>
 
@@ -72,7 +72,7 @@ Open <http://localhost:8501>.
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
 
-Expected result at the time of writing: **90 passed**.
+Expected result at the time of writing: **92 passed**.
 
 ### Quality checks
 
@@ -199,7 +199,7 @@ AegisFlow/
 │   └── ui/                    # Streamlit pages and shared components
 ├── skills/                    # 6 SKILL.md instruction packages
 ├── sample_data/               # Clean, injection, corrupt, encrypted fixtures
-├── tests/                     # 90 unit, integration, E2E, UI tests
+├── tests/                     # 92 unit, integration, E2E, UI tests
 ├── docs/                      # Design, governance, risk, testing, NIST, report
 └── slides/                    # Self-contained HTML presentation
 ```
@@ -210,7 +210,7 @@ AegisFlow/
 
 | Area | Status | Evidence |
 |---|---|---|
-| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 90 passing tests |
+| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 92 passing tests |
 | Engineering baseline | **Implemented** | `ruff check` clean; 78% coverage with a 75% gate; CI matrix (Windows + Ubuntu) runs lint, tests, theme and contrast |
 | Human approval / hash binding | **Implemented and verified** | E2E + approval unit tests; UI approval and rejection flows |
 | Approval race and DB backstop | **Implemented and verified** | Checks and write in one transaction; unique `(version_id, decision)` index; concurrent-approval test |
@@ -220,6 +220,7 @@ AegisFlow/
 | Streamlit UI | **Implemented and verified headlessly** | `AppTest` approval and rejection flows; server health `ok`; Playwright responsive check PASS at 360/768/1280/1536 |
 | UI design system | **Implemented and verified** | `aegisflow-ui` skill; theme 16/16 PASS; contrast 40/40 PASS; responsive check PASS with screenshots |
 | Accessibility | **Verified** | axe-core 0 WCAG 2.1 A/AA violations on five pages in light and dark; skip link, live focus, reduced-motion, 44 px targets |
+| Summary voice | **Implemented and verified** | Substance-first summaries, page-aware source line, attention block only when warranted, banned meta-phrases tested |
 | Real OpenRouter / Gemini / OpenAI | **Implemented, not executed** | Real mode was not enabled; no live call recorded; see limitation below |
 | OCR for scanned PDFs | **Not implemented** | Documented limitation |
 | Multi-user auth / remote deployment | **Not implemented** | Single-user local prototype |

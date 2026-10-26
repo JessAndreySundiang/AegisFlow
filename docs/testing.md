@@ -3,7 +3,7 @@
 **System:** AegisFlow v0.1.0
 **Date:** 26 October 2026
 **Environment:** Windows, Python 3.13.7, project `.venv`, pytest 9.1.1
-**Result:** **90 passed, 0 failed** (`pytest tests\ -q`)
+**Result:** **92 passed, 0 failed** (`pytest tests\ -q`)
 
 ---
 
@@ -46,7 +46,7 @@ Tests use `tmp_path`; they do not write to the project `data/` directory. The UI
 
 | Level | Files | What is exercised |
 |---|---|---|
-| Unit | `test_models.py`, `test_database.py`, `test_approvals.py`, `test_approval_race.py`, `test_document_processing.py`, `test_settings.py`, `test_provider_contract.py`, `test_skills_loader.py`, `test_governance.py`, `test_metrics.py` | Schemas, transitions, hashing, persistence, approvals and races, extraction guards, provider contracts, skills, policy checks, metrics |
+| Unit | `test_models.py`, `test_database.py`, `test_approvals.py`, `test_approval_race.py`, `test_document_processing.py`, `test_settings.py`, `test_provider_contract.py`, `test_writer_voice.py`, `test_skills_loader.py`, `test_governance.py`, `test_metrics.py` | Schemas, transitions, hashing, persistence, approvals and races, extraction guards, provider contracts, writer voice, skills, policy checks, metrics |
 | Integration / E2E | `test_e2e.py` (TC-01 to TC-13) | Real compiled LangGraph, real SQLite, real approval state machine, mock LLM |
 | UI | `test_ui_smoke.py` | Streamlit `AppTest`: all five pages, review form, approval, rejection confirmation, finalization |
 | Manual smoke | recorded during build | Full pipeline to `awaiting_human_review`, approve/resume to `completed`, exports |
@@ -95,12 +95,13 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 | `test_approval_race.py` | 3 | Two concurrent approvals record exactly one; unique index exists and rejects direct duplicate inserts |
 | `test_document_processing.py` | 15 | Extensions, TXT/PDF/DOCX extraction, empty, corrupted, encrypted, unsupported, size limit, DOCX bomb, PDF page cap, PDF signature, injection scan, delimiters, safe filenames, deletion |
 | `test_provider_contract.py` | 8 | Real-provider JSON parsing, fenced JSON, malformed output, timeout/rate-limit retry, 401 non-retry, construction guards |
+| `test_writer_voice.py` | 2 | Banned meta-phrases absent, 2-4 cited sentences, page count in the source line, attention block only when facts warrant it |
 | `test_skills_loader.py` | 5 | Six skills load, agent mapping, catalog/unknown, malformed frontmatter/body |
 | `test_governance.py` | 9 | Eight unique rules, good draft, missing reference/section, injection, secret, external action, simulated warning, invented email |
 | `test_metrics.py` | 3 | Groundedness, citation coverage, time reduction (including negative) |
 | `test_e2e.py` | 13 | TC-01 to TC-13 |
 | `test_ui_smoke.py` | 3 | Streamlit pages + approval flow + rejection confirmation + revision flow |
-| **Total** | **90** | |
+| **Total** | **92** | |
 
 ---
 
@@ -109,7 +110,7 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
 ...................................................................                      [100%]
-90 passed in 19.21s
+92 passed in 10.10s
 ```
 
 A separate Streamlit server smoke test was run:
@@ -159,7 +160,7 @@ All checks passed!
 
 $ .\.venv\Scripts\python.exe -m pytest --cov=aegisflow --cov-report=term-missing
 TOTAL                                     3299    584    996    236    78%
-90 passed
+92 passed
 ```
 
 `pyproject.toml` configures lint, pytest, and branch coverage; `requirements-dev.txt` pins `ruff`, `pytest-cov`, and `playwright`. CI (`.github/workflows/ci.yml`) runs lint, tests with a 75% coverage gate, and theme/contrast on Windows and Ubuntu, plus a seeded browser job on Ubuntu that installs Chromium, sweeps all five pages, runs axe, and uploads `ui-evidence`. Settings fallback is covered by `test_settings.py`: missing authorization, key, or model must fall back to mock, and `describe()` must never expose a key.
@@ -176,6 +177,7 @@ TOTAL                                     3299    584    996    236    78%
 - Two concurrent approvals produce exactly one record; the unique `(version_id, decision)` index rejects a direct duplicate insert.
 - DOCX archives that expand beyond the size/ratio limits and PDFs above the page cap are refused before parsing.
 - The real-provider path parses valid and fenced JSON, rejects malformed output without retry, retries timeouts and 429s, and treats 401 as non-retryable.
+- Mock drafts read as a brief: substance first, no count/meta phrases, every sentence cited, page count in the source line, and an attention block only when the facts warrant it.
 - A new version invalidates prior approval.
 - Rejection is terminal and blocks export.
 - Injection fixtures do not reach the draft; clean facts survive.

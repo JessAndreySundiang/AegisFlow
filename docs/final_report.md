@@ -6,7 +6,7 @@
 **Date:** 26 October 2026  
 **Prepared by:** SIP10 project author  
 **Environment:** Windows, Python 3.13.7, project `.venv`  
-**Recorded test result:** **90 passed, 0 failed** (`pytest tests\ -q`)
+**Recorded test result:** **92 passed, 0 failed** (`pytest tests\ -q`)
 
 ---
 
@@ -16,7 +16,7 @@ AegisFlow is a working prototype of a governed, hierarchical multi-agent documen
 
 The prototype is designed around a distinction between **generation** and **authority**. Language models generate and transform text. Deterministic code owns routing, permissions, retry limits, approval validation, and export checks. The human owns final approval.
 
-Mock mode is implemented and verified with 90 automated tests, including 13 end-to-end scenarios and three headless Streamlit UI flows. A project-scoped `aegisflow-ui` skill documents the tokenized, responsive interface. Real-provider adapters for OpenRouter, Gemini, and OpenAI are implemented, but **no live provider call was made** in this build because real mode was not enabled and no external call was authorized. Real mode is therefore reported as implemented but unverified, not as a demonstrated capability.
+Mock mode is implemented and verified with 92 automated tests, including 13 end-to-end scenarios and three headless Streamlit UI flows. A project-scoped `aegisflow-ui` skill documents the tokenized, responsive interface. Real-provider adapters for OpenRouter, Gemini, and OpenAI are implemented, but **no live provider call was made** in this build because real mode was not enabled and no external call was authorized. Real mode is therefore reported as implemented but unverified, not as a demonstrated capability.
 
 ---
 
@@ -81,7 +81,7 @@ The assignment images specify:
 | `SKILL.md` packages | 3 | **6** |
 | Governance rules | 5 | **8** |
 | Risks | 5 | **9** |
-| Test cases | 5 | **13 E2E + 74 unit/integration + 3 UI = 90** |
+| Test cases | 5 | **13 E2E + 76 unit/integration + 3 UI = 92** |
 | NIST functions | 4 | **4** |
 | UI pages | not specified | **5** |
 | UI design system skills | not specified | **1** (`aegisflow-ui`) |
@@ -241,7 +241,7 @@ Each rule has an owner, enforcement point, evidence, failure behavior, residual 
 
 - **GOVERN:** eight rules with named owners, a third-party provider gate, approval accountability, and documented policies.
 - **MAP:** intended use, single-user context, non-goals, data sources, affected parties, and nine risks.
-- **MEASURE:** groundedness, citation coverage, approval outcome, revisions, retries, elapsed time, and 90 tests. No benchmark numbers are invented.
+- **MEASURE:** groundedness, citation coverage, approval outcome, revisions, retries, elapsed time, and 92 tests. No benchmark numbers are invented.
 - **MANAGE:** block/escalate paths, bounded retries, incident procedure, deletion, residual-risk acceptance, and open actions.
 
 The worksheet is candid about gaps: live-provider behavior, stakeholder consultation, formal impact assessment, drift monitoring, backup/restore, and fairness evaluation are not complete.
@@ -376,16 +376,16 @@ Markdown and TXT exports contain:
 
 | Level | Scope | Count |
 |---|---|---:|
-| Unit | Models, database, approvals, extraction guards, skills, policy checks, metrics, settings fallback | 74 |
+| Unit | Models, database, approvals, extraction guards, skills, policy checks, metrics, settings fallback, writer voice | 76 |
 | End-to-end | Real compiled graph, real SQLite, real approval state machine, mock LLM; TC-01–TC-13 | 13 |
 | UI | Streamlit `AppTest`: all five pages, decision refusal, approval, rejection confirmation, revision, finalization | 3 |
-| **Total** | | **90** |
+| **Total** | | **92** |
 
 Additional recorded smoke checks:
 
 - Manual mock run reached `awaiting_human_review`; approval and resume reached `completed`.
 - Streamlit server health endpoint returned `ok`.
-- All 90 tests passed.
+- All 92 tests passed.
 - Theme checks 16/16 PASS; contrast checks 40/40 PASS.
 - Playwright responsive check at 360/768/1280/1536: **PASS** with full-page screenshots in `ui_checks/`.
 - Browser spot-check of Review and History at 1280 and 360: **PASS** (`ui_checks/review_*.png`, `history_*.png`); the 360 px sidebar collapses and still reaches every page.
@@ -417,7 +417,7 @@ Additional recorded smoke checks:
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
 ...................................................................                      [100%]
-90 passed in 19.21s
+92 passed in 10.10s
 ```
 
 Duration varies by machine. The recorded result is the actual run, not an estimate.
@@ -554,7 +554,7 @@ Redacting the draft would make a meaningful review impossible: the reviewer must
 
 AegisFlow demonstrates that a hierarchical multi-agent document system can be useful without being unaccountable. The Planner establishes intent, the Orchestrator controls flow, specialist workers do the language work, deterministic checks and an independent reviewer challenge the result, and a human approves the exact version that will be exported.
 
-The prototype is complete for the course scope: it runs in mock mode, it is tested with 90 passing tests, it enforces a hash-bound approval gate, it documents eight governance rules and nine risks, it includes a project-scoped UI design system, and it maps every course deliverable to evidence. It is equally important that the report does not overclaim: real-provider mode was not executed, and that limitation is visible in the README, UI, tests, NIST worksheet, and this report.
+The prototype is complete for the course scope: it runs in mock mode, it is tested with 92 passing tests, it enforces a hash-bound approval gate, it documents eight governance rules and nine risks, it includes a project-scoped UI design system, and it maps every course deliverable to evidence. It is equally important that the report does not overclaim: real-provider mode was not executed, and that limitation is visible in the README, UI, tests, NIST worksheet, and this report.
 
 The central lesson is simple: **generation can be probabilistic; authority should not be.**
 
@@ -610,7 +610,7 @@ AegisFlow/
 │   └── ui/                        Five pages, tokenized components, responsive hierarchy
 ├── skills/                        6 SKILL.md packages
 ├── sample_data/                   Clean, injection, corrupt, encrypted fixtures
-├── tests/                         90 tests
+├── tests/                         92 tests
 ├── docs/                          Design, governance, risk, NIST, testing, report
 └── slides/                        Self-contained HTML deck
 ```
@@ -621,7 +621,7 @@ AegisFlow/
 
 | Claim | Evidence |
 |---|---|
-| 90 tests passed | `docs/testing.md` §6; `tests/` |
+| 92 tests passed | `docs/testing.md` §6; `tests/` |
 | Approval enforcement | `docs/human_approval.md`; TC-01–TC-05, TC-10; UI approval and rejection tests |
 | Selective routing | TC-13; `docs/workflow.md` §4 |
 | Governance rules | `docs/governance_rules.md`; `test_governance.py` |

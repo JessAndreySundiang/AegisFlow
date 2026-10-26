@@ -16,7 +16,7 @@ Rows 3–5 record the state at that phase. Their “Playwright missing / NOT RUN
 
 | Check | Command | Result |
 |---|---|---|
-| Unit + E2E + UI suite | `python -m pytest tests\ -q` | **90 passed, 0 failed** (6.79 s) |
+| Unit + E2E + UI suite | `python -m pytest tests\ -q` | **92 passed, 0 failed** (6.79 s) |
 | Theme tokens | `check_theme.py` | **PASS 16/16** |
 | Contrast (light & dark) | `check_contrast.py` | **PASS 40/40** |
 | Responsive layout | `check_responsive.py` (Playwright + Chromium) | **PASS** at 360, 768, 1280, 1536 px (`scrollWidth == innerWidth`) |
@@ -36,15 +36,15 @@ Published: <https://github.com/JessAndreySundiang/AegisFlow> (public, `main` bra
 
 - Added `pyproject.toml` (ruff + pytest + branch-coverage config), `requirements-dev.txt` (`ruff==0.17.2`, `pytest-cov==7.1.0`), `LICENSE` (MIT), `SECURITY.md`, and `.github/workflows/ci.yml` (Windows + Ubuntu: lint, tests with 75% coverage gate, theme, contrast).
 - `ruff check .` is clean after fixing import order, unused imports, unused locals, a strict `zip`, and specific `ValidationError` assertions. `UP042` (str-Enum) and `UP047` (PEP 695 generics) are ignored deliberately to keep serialized enum values unchanged.
-- Added `tests/test_settings.py` (9 tests) for the real-mode fallback matrix and secret-free `describe()`. Suite is now **90 passed**; coverage **78%** total (branch).
-- The README now carries a CI badge and a quality-checks section; the UI count references across the docs and deck were updated from 67 to 90.
+- Added `tests/test_settings.py` (9 tests) for the real-mode fallback matrix and secret-free `describe()`. Suite is now **92 passed**; coverage **78%** total (branch).
+- The README now carries a CI badge and a quality-checks section; the UI count references across the docs and deck were updated from 67 through 92.
 
 ## P1 safety hardening — 26 October 2026
 
 - **B1 approval race:** `record_decision` performs every check inside the same transaction as the review, status, and audit writes, and `Database.initialize()` adds a unique index on `human_reviews(version_id, decision)`. Legacy databases that already contain duplicates skip the index instead of failing startup. New tests prove that two concurrent approvals record exactly one decision and that a direct duplicate insert is rejected.
 - **B2 extraction guards:** PDFs above 200 pages, DOCX archives above 2,000 entries, 50 MB expanded size, or a 100:1 compression ratio are refused with `TOO_LARGE` before the parsers run. PDF/DOCX signature checks and the TXT null-byte check are now covered by tests.
 - **B4 provider contracts:** fake LangChain chat models exercise the real-provider code path with no network: valid and fenced JSON, malformed output without retry, timeout/429 retries ending in `TransientProviderError`, 401 as non-retryable `LLMError`, and construction guards.
-- Suite is now **90 passed** (13 E2E + 74 unit/integration + 3 UI); coverage **78%** (branch), CI gate 75%.
+- Suite is now **92 passed** (13 E2E + 76 unit/integration + 3 UI); coverage **78%** (branch), CI gate 75%.
 
 ## UI/UX phases A–D — 26 October 2026
 
@@ -54,5 +54,6 @@ Published: <https://github.com/JessAndreySundiang/AegisFlow> (public, `main` bra
 - **D design:** deep ocean-navy gradient rail (no pure black), teal-tinted canvas, soft card shadows, and a documented palette in `docs/ui_design.md`; theme 16/16 and contrast 40/40 still pass.
 - **IA signposting (approved follow-up):** sidebar hint `Create → run → approve → export`, a live `Review · N` count for waiting tasks, a "View agent trace" link on Review, and a Review action on awaiting rows in History. Labels and routes are unchanged.
 - **Draft readability:** new `aegisflow/ui/draft_view.py` renders the stored draft as a document — title, SIMULATED badge, lead summary, findings with citation chips, sources, limitations — in Review and Workflow. The exact Markdown remains available in a raw expander and is unchanged for hashing, approval, and export.
+- **Summary voice + PDF-aware briefs:** `build_mock_draft` now leads with substance instead of counts, turns labelled facts into sentences, adds a `**Source:** filename · page count` line, and emits a "What needs attention" block only when the source states decisions, owners, dates, or amounts. The real-mode system prompt and `skills/report-writing/SKILL.md` now specify a busy-manager audience, ≤25-word sentences, banned meta-phrases, and optional themed findings. Two new tests cover the voice and the honest no-claims path.
 
 Limitations reported honestly: no live provider call was executed and no pixel-diff against the mockup PDF was run. Accessibility is now automated (axe-core: 0 WCAG 2.1 A/AA violations on all five pages, light and dark), and the browser page sweep runs in CI. CI status must be read from GitHub Actions, not assumed.

@@ -96,7 +96,9 @@ def test_ui_renders_pages_and_approval_flow_finalizes(tmp_path, monkeypatch):
     assert not at.exception
     assert [title.value for title in at.title] == [f"Review · T-{task_id[:4].upper()}"]
     assert any(input_.label.startswith("Content hash") for input_ in at.text_input)
-    assert any(area.label == "Draft" for area in at.text_area)
+    assert any("Key Findings" in block.value for block in at.markdown)
+    assert any("Summary" in block.value for block in at.markdown)
+    assert not any(area.label == "Draft" for area in at.text_area)
     assert any(button.label == "View agent trace" for button in at.button)
 
     # The action names the exact version. Submitting without acknowledging is refused.

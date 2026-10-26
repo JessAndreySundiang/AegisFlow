@@ -6,7 +6,7 @@ import streamlit as st
 
 from ..metrics import build_workload_metric
 from ..models import TaskStatus
-from . import common, components, hierarchy, layout
+from . import common, components, draft_view, hierarchy, layout
 
 
 def _pick_task(services):
@@ -38,7 +38,11 @@ def _details(db, task, state) -> None:
     draft = state.get("draft") or ""
     if draft:
         with st.expander("Draft preview (review before sharing)"):
-            st.text_area("Draft", draft, height=300, disabled=True, label_visibility="collapsed")
+            draft_view.render_draft(
+                draft,
+                simulated=bool(state.get("simulated", True)),
+                show_raw=False,
+            )
     subtasks = db.list_subtasks(task.id)
     with st.expander("Subtasks"):
         if subtasks:

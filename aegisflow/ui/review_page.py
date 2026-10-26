@@ -8,7 +8,7 @@ import streamlit as st
 
 from ..approvals import ApprovalError, record_decision
 from ..models import HumanDecision, TaskStatus
-from . import common, components, layout
+from . import common, components, draft_view, layout
 
 
 def _decision_labels(version: int) -> dict[str, str]:
@@ -350,13 +350,7 @@ def render(services) -> None:
     with left:
         with st.container(border=True, key="ag-card-draft"):
             st.markdown('<div class="ag-card-title">Draft (read-only)</div>', unsafe_allow_html=True)
-            st.text_area(
-                "Draft",
-                payload["draft"],
-                height=480,
-                disabled=True,
-                label_visibility="collapsed",
-            )
+            draft_view.render_draft(payload["draft"], simulated=payload["simulated"])
             st.markdown(
                 '<div class="ag-note">Read-only in this prototype. Editing would create a new '
                 "version and require fresh approval. The draft may contain personal data from "

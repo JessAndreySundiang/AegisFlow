@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>AegisFlow — SIP10 Final Project</title>
+<style>
+  :root {
+    --ink: #0f172a;
+    --ink-2: #1e293b;
+    --muted: #64748b;
+    --muted-2: #94a3b8;
+    --line: #dbe4ee;
+    --paper: #f7fafc;
+    --white: #ffffff;
+    --teal: #0f766e;
+    --teal-2: #14b8a6;
+    --teal-soft: #ccfbf1;
+    --amber: #b45309;
+    --amber-soft: #fef3c7;
+    --red: #b91c1c;
+    --red-soft: #fee2e2;
+    --blue: #1d4ed8;
+    --blue-soft: #dbeafe;
+    --shadow: 0 22px 60px rgba(15, 23, 42, .12);
+    --radius: 18px;
+    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: #0b1220;
+    color: var(--ink);
+    font-family: var(--sans);
+    overflow: hidden;
+  }
+
+  #deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: clamp(26px, 4.4vh, 58px) clamp(34px, 5.5vw, 92px);
+    background:
+      radial-gradient(1200px 500px at 92% -10%, rgba(20, 184, 166, .08), transparent 60%),
+      var(--paper);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 2vh, 24px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(26px);
+    transition: opacity .28s ease, transform .28s ease, visibility .28s;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    z-index: 2;
+  }
+  .slide.dark {
+    background:
+      radial-gradient(900px 500px at 82% 0%, rgba(20, 184, 166, .24), transparent 62%),
+      linear-gradient(135deg, #0b1220 0%, #0f2f32 100%);
+    color: #f8fafc;
+  }
+  .slide.dark .eyebrow { color: #5eead4; }
+  .slide.dark .lede { color: #cbd5e1; }
+  .slide.dark .kicker { color: #94a3b8; }
+
+  /* Slide furniture */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--teal);
+    font-size: clamp(11px, 1.1vw, 14px);
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 28px;
+    height: 3px;
+    border-radius: 99px;
+    background: currentColor;
+    flex: 0 0 auto;
+  }
+  h1, h2, h3, p { margin: 0; }
+  h1 {
+    font-size: clamp(36px, 4.7vw, 66px);
+    line-height: 1.02;
+    letter-spacing: -.035em;
+    font-weight: 800;
+  }
+  h2 {
+    font-size: clamp(28px, 3.5vw, 48px);
+    line-height: 1.08;
+    letter-spacing: -.025em;
+    font-weight: 800;
+  }
+  h3 {
+    font-size: clamp(15px, 1.5vw, 21px);
+    line-height: 1.2;
+    font-weight: 750;
+  }
+  .lede {
+    color: #334155;
+    font-size: clamp(14px, 1.5vw, 21px);
+    line-height: 1.45;
+    max-width: 1000px;
+  }
+  .kicker {
+    color: var(--muted);
+    font-size: clamp(11px, 1.05vw, 14px);
+    line-height: 1.45;
+  }
+  .small { font-size: clamp(11px, 1.02vw, 14px); line-height: 1.45; }
+  .muted { color: var(--muted); }
+  .strong { font-weight: 800; }
+  code {
+    font-family: var(--mono);
+    background: #e8eef6;
+    color: #0f3d3a;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: .88em;
+    white-space: nowrap;
+  }
+  .dark code { background: rgba(255,255,255,.12); color: #99f6e4; }
+
+  .topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex: 0 0 auto;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .brand-mark {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    display: grid;
+    place-items: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 900;
+    box-shadow: 0 6px 18px rgba(15,118,110,.24);
+  }
+  .slide-no {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .08em;
+  }
+  .dark .brand, .dark .slide-no { color: #94a3b8; }
+
+  .content {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(12px, 2.1vh, 26px);
+    min-height: 0;
+  }
+  .content.top { justify-content: flex-start; }
+
+  /* Layout primitives */
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(14px, 1.7vw, 26px);
+    align-items: stretch;
+  }
+  .three {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(12px, 1.4vw, 22px);
+    align-items: stretch;
+  }
+  .four {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(10px, 1.2vw, 18px);
+    align-items: stretch;
+  }
+  .five {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: clamp(13px, 1.6vw, 22px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .045);
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card p, .card li {
+    color: #334155;
+    font-size: clamp(12px, 1.17vw, 16px);
+    line-height: 1.45;
+  }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li + li { margin-top: 4px; }
+  .card .num {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--teal);
+    letter-spacing: .04em;
+  }
+  .accent { color: var(--teal); }
+  .card.teal { border-left: 6px solid var(--teal); }
+  .card.red { border-left: 6px solid var(--red); }
+  .card.amber { border-left: 6px solid var(--amber); }
+  .card.blue { border-left: 6px solid var(--blue); }
+  .card.flat { box-shadow: none; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: clamp(11px, 1vw, 13px);
+    font-weight: 750;
+    letter-spacing: .02em;
+    background: var(--teal-soft);
+    color: #115e59;
+    border: 1px solid rgba(15,118,110,.16);
+  }
+  .badge.amber { background: var(--amber-soft); color: #92400e; border-color: rgba(180,83,9,.14); }
+  .badge.red { background: var(--red-soft); color: #991b1b; border-color: rgba(185,28,28,.14); }
+  .badge.blue { background: var(--blue-soft); color: #1e40af; border-color: rgba(29,78,216,.14); }
+
+  .quote {
+    border-left: 5px solid var(--teal);
+    background: var(--white);
+    padding: 14px 20px;
+    border-radius: 0 12px 12px 0;
+    color: #1e293b;
+    font-size: clamp(13px, 1.35vw, 18px);
+    line-height: 1.45;
+    box-shadow: 0 8px 24px rgba(15,23,42,.04);
+  }
+  .dark .quote { background: rgba(255,255,255,.07); color: #e2e8f0; border-left-color: #5eead4; }
+
+  .flow {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: clamp(14px, 1.7vw, 24px);
+    box-shadow: 0 8px 24px rgba(15,23,42,.045);
+    font-family: var(--mono);
+    font-size: clamp(11px, 1.15vw, 16px);
+    line-height: 1.75;
+    color: #1e293b;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .flow .hl { color: var(--teal); font-weight: 800; }
+  .flow .bad { color: var(--red); font-weight: 700; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .step {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 9px;
+    text-align: center;
+    box-shadow: 0 6px 16px rgba(15,23,42,.04);
+  }
+  .step .n {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    margin-bottom: 5px;
+  }
+  .step .t {
+    font-size: clamp(10px, .92vw, 12px);
+    font-weight: 750;
+    color: #1e293b;
+    line-height: 1.2;
+  }
+  .step.stop { border-color: rgba(180,83,9,.35); background: #fffbeb; }
+  .step.stop .n { background: var(--amber); }
+  .step.done .n { background: #0f766e; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(15,23,42,.045);
+    font-size: clamp(11px, 1.06vw, 14px);
+    line-height: 1.35;
+  }
+  th {
+    background: #e8eef6;
+    color: #0f172a;
+    text-align: left;
+    font-size: clamp(10px, .98vw, 13px);
+    letter-spacing: .02em;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #edf2f7;
+    color: #334155;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td strong { color: #0f172a; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .metric {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 18px;
+    box-shadow: 0 8px 24px rgba(15,23,42,.045);
+  }
+  .metric .value {
+    font-size: clamp(30px, 3.3vw, 48px);
+    line-height: 1;
+    font-weight: 850;
+    letter-spacing: -.04em;
+    color: var(--teal);
+  }
+  .metric .label {
+    font-size: clamp(11px, 1vw, 13px);
+    color: var(--muted);
+    margin-top: 5px;
+    line-height: 1.35;
+  }
+
+  .rulenum {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    background: var(--teal-soft);
+    color: #115e59;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 800;
+    flex: 0 0 auto;
+  }
+  .rule {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 11px 12px;
+    box-shadow: 0 5px 16px rgba(15,23,42,.035);
+    min-height: 66px;
+  }
+  .rule strong {
+    display: block;
+    font-size: clamp(11px, 1.02vw, 13px);
+    line-height: 1.22;
+    margin-bottom: 2px;
+  }
+  .rule span {
+    display: block;
+    color: var(--muted);
+    font-size: clamp(10px, .92vw, 12px);
+    line-height: 1.3;
+  }
+
+  .checkline {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    color: #334155;
+    font-size: clamp(12px, 1.1vw, 15px);
+    line-height: 1.42;
+  }
+  .checkline::before {
+    content: "✓";
+    color: var(--teal);
+    font-weight: 900;
+    flex: 0 0 auto;
+  }
+  .xline {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    color: #7f1d1d;
+    font-size: clamp(12px, 1.1vw, 15px);
+    line-height: 1.42;
+  }
+  .xline::before {
+    content: "×";
+    color: var(--red);
+    font-weight: 900;
+    flex: 0 0 auto;
+  }
+
+  /* Title slide */
+  .title-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    gap: 18px;
+    max-width: 1050px;
+  }
+  .title-wrap h1 {
+    font-size: clamp(62px, 9vw, 138px);
+    letter-spacing: -.055em;
+    line-height: .92;
+    color: #f8fafc;
+  }
+  .title-wrap .sub {
+    color: #99f6e4;
+    font-size: clamp(18px, 2.1vw, 30px);
+    line-height: 1.25;
+    font-weight: 650;
+    max-width: 900px;
+  }
+  .title-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .title-foot {
+    position: absolute;
+    left: clamp(34px, 5.5vw, 92px);
+    right: clamp(34px, 5.5vw, 92px);
+    bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    color: #94a3b8;
+    font-size: clamp(10px, .95vw, 13px);
+  }
+
+  /* Compact table slide */
+  .table-compact td, .table-compact th { padding: 7px 10px; }
+
+  /* Demo timeline */
+  .timeline {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .timeline span {
+    height: 8px;
+    border-radius: 99px;
+    background: #dbe4ee;
+  }
+  .timeline span.on { background: var(--teal); }
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  /* Controls */
+  .hud {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 42px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: linear-gradient(180deg, rgba(11,18,32,0) 0%, rgba(11,18,32,.72) 100%);
+    color: #cbd5e1;
+    pointer-events: none;
+  }
+  .hud > * { pointer-events: auto; }
+  .hud-left, .hud-right { display: flex; align-items: center; gap: 7px; }
+  .iconbtn {
+    appearance: none;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(15,23,42,.72);
+    color: #e2e8f0;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .iconbtn:hover { background: #134e4a; border-color: #14b8a6; transform: translateY(-1px); }
+  .iconbtn:focus-visible { outline: 2px solid #5eead4; outline-offset: 2px; }
+  .counter {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #cbd5e1;
+    background: rgba(15,23,42,.72);
+    border: 1px solid rgba(255,255,255,.12);
+    padding: 5px 9px;
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, #14b8a6, #5eead4);
+    z-index: 40;
+    transition: width .25s ease;
+  }
+
+  /* Speaker notes */
+  .notes-panel {
+    position: fixed;
+    right: 18px;
+    bottom: 54px;
+    width: min(430px, calc(100vw - 36px));
+    max-height: 42vh;
+    overflow: auto;
+    z-index: 35;
+    background: #0b1220;
+    color: #e2e8f0;
+    border: 1px solid rgba(94,234,212,.25);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 24px 70px rgba(0,0,0,.4);
+    font-size: 13px;
+    line-height: 1.5;
+    display: none;
+  }
+  .notes-panel.open { display: block; }
+  .notes-panel .nhead {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #5eead4;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .notes-panel p { margin: 0 0 8px; }
+  .notes-panel strong { color: #fff; }
+
+  /* Help */
+  .help {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(5,10,18,.72);
+    backdrop-filter: blur(5px);
+    display: none;
+    place-items: center;
+    padding: 24px;
+  }
+  .help.open { display: grid; }
+  .help-card {
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid rgba(94,234,212,.22);
+    border-radius: 18px;
+    padding: 24px 26px;
+    width: min(560px, 100%);
+    box-shadow: var(--shadow);
+  }
+  .help-card h3 { color: #fff; margin-bottom: 10px; font-size: 20px; }
+  .help-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    font-size: 13px;
+    color: #cbd5e1;
+    margin: 14px 0 18px;
+  }
+  .key {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.14);
+    padding: 3px 7px;
+    border-radius: 6px;
+    color: #99f6e4;
+    white-space: nowrap;
+    height: fit-content;
+  }
+  .help-card button {
+    appearance: none;
+    border: 1px solid rgba(94,234,212,.35);
+    background: #134e4a;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+  }
+
+  /* Print */
+  @media print {
+    @page { size: 13.333in 7.5in; margin: 0; }
+    html, body { background: white; overflow: visible; height: auto; }
+    #deck { width: auto; height: auto; overflow: visible; }
+    .slide {
+      position: relative;
+      width: 13.333in;
+      height: 7.5in;
+      page-break-after: always;
+      break-after: page;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: none !important;
+      box-shadow: none;
+      overflow: hidden;
+    }
+    .hud, .progress, .notes-panel, .help { display: none !important; }
+  }
+
+  /* Smaller screens */
+  @media (max-width: 900px) {
+    .three, .four, .metrics { grid-template-columns: 1fr 1fr; }
+    .steps { grid-template-columns: repeat(4, 1fr); }
+    .title-foot { position: static; margin-top: 18px; }
+    .slide { padding: 24px; }
+    table { font-size: 11px; }
+    th, td { padding: 6px 7px; }
+  }
+  @media (max-width: 620px) {
+    .two, .three, .four, .metrics { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .slide { padding: 18px; }
+    .hud { height: 38px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: none; }
+    .progress { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<main id="deck" aria-live="polite">
+
+  <!-- 1 -->
+  <section class="slide dark active" data-title="Title">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">SIP10 · 2026</div>
+    </div>
+    <div class="title-wrap">
+      <div class="eyebrow">Final project · governed agentic AI</div>
+      <h1>AegisFlow</h1>
+      <div class="sub">A governed hierarchical multi-agent system for document tasks — with human-in-the-loop approval.</div>
+      <div class="title-meta">
+        <span class="badge">Working prototype</span>
+        <span class="badge">Mock mode verified</span>
+        <span class="badge">67 tests passing</span>
+      </div>
+      <p class="lede" style="margin-top:6px">AI does the work. The human keeps final authority.</p>
+    </div>
+    <div class="title-foot">
+      <span>SIP10 Final Project · 26 October 2026</span>
+      <span>Arrow keys to navigate · N for notes</span>
+    </div>
+    <aside class="notes">
+      <p>Open with the one-line rule: AI does the work; the human keeps final authority.</p>
+      <p>State immediately that the demo runs in mock mode. Do not imply real AI analysis.</p>
+    </aside>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide" data-title="Problem">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">02 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">The problem</p>
+      <h2>One model call hides three risks</h2>
+      <div class="three">
+        <article class="card red">
+          <div class="num">01 · INTEGRITY</div>
+          <h3>Fabrication</h3>
+          <p>The model adds a budget, deadline, or name that was never in the source.</p>
+        </article>
+        <article class="card amber">
+          <div class="num">02 · SECURITY</div>
+          <h3>Prompt injection</h3>
+          <p>A document tells the model to ignore instructions, reveal secrets, or skip review.</p>
+        </article>
+        <article class="card blue">
+          <div class="num">03 · GOVERNANCE</div>
+          <h3>Unaccountable automation</h3>
+          <p>Nobody can prove what was approved, by whom, or whether it changed afterward.</p>
+        </article>
+      </div>
+      <div class="quote">A prompt is advisory. A control has to be <strong>enforced in code</strong> — and a human has to own the final decision.</div>
+    </div>
+    <aside class="notes">
+      <p>Give one concrete example for each risk. Then transition: prompt engineering alone cannot solve these problems.</p>
+    </aside>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" data-title="Course alignment">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">03 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Course alignment</p>
+      <h2>Requirements, exceeded — with evidence</h2>
+      <div class="two">
+        <article class="card flat">
+          <h3 style="color:var(--muted)">Required minimum</h3>
+          <div class="checkline">3 agents / roles</div>
+          <div class="checkline">3 <code>SKILL.md</code> files</div>
+          <div class="checkline">5 governance rules</div>
+          <div class="checkline">5 identified risks</div>
+          <div class="checkline">5 test cases</div>
+          <div class="checkline">Human approval</div>
+          <div class="checkline">NIST AI RMF worksheet</div>
+        </article>
+        <article class="card teal">
+          <h3 style="color:var(--teal)">AegisFlow delivers</h3>
+          <div class="checkline"><strong>6</strong> agents / roles</div>
+          <div class="checkline"><strong>6</strong> SKILL.md packages</div>
+          <div class="checkline"><strong>8</strong> governance rules</div>
+          <div class="checkline"><strong>9</strong> risks</div>
+          <div class="checkline"><strong>67</strong> tests · 13 E2E + 51 unit/integration + 3 UI</div>
+          <div class="checkline">Hash-bound approval</div>
+          <div class="checkline">GOVERN / MAP / MEASURE / MANAGE</div>
+        </article>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+        <span class="badge">12 / 12 SIP10 deliverables mapped to evidence</span>
+        <span class="kicker">Every extra control is tied to a rule, risk, and test.</span>
+      </div>
+    </div>
+    <aside class="notes">
+      <p>Do not read every row. Point to the counts and the phrase “12/12 deliverables mapped to evidence”.</p>
+    </aside>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide" data-title="Architecture">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">04 / 16</div>
+    </div>
+    <div class="content top">
+      <p class="eyebrow">Architecture</p>
+      <h2>A real hierarchy — delegation down, escalation up</h2>
+      <div class="flow"><span class="hl">USER</span> → <span class="hl">PLANNER</span> → <span class="hl">ORCHESTRATOR</span>
+      ├─ Analysis Lead  → Document Analyst → Evidence Verifier
+      ├─ Drafting Lead  → Report Writer
+      └─ Assurance Lead → Policy Checker → Independent Reviewer
+      → <span class="hl">HUMAN APPROVAL</span> → FINALIZE → EXPORT</div>
+      <div class="three">
+        <article class="card teal">
+          <h3>Level 1 · Command</h3>
+          <p>Planner first. Root Orchestrator routes deterministically and enforces limits.</p>
+        </article>
+        <article class="card teal">
+          <h3>Level 2 · Team leads</h3>
+          <p>Rule-based supervisors. No extra model calls. Own prerequisites, retries, completion.</p>
+        </article>
+        <article class="card teal">
+          <h3>Level 3 · Workers</h3>
+          <p>LLM agents do language work. Deterministic checks and humans own authority.</p>
+        </article>
+      </div>
+    </div>
+    <aside class="notes">
+      <p>Work is delegated downward, results report upward, problems escalate to the human.</p>
+      <p>Team leads make zero model calls. This hybrid hierarchy is deliberate: permissions should not be arguable by a language model.</p>
+    </aside>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide" data-title="Workflow">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">05 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Workflow</p>
+      <h2>Stop before authority</h2>
+      <div class="steps">
+        <div class="step done"><span class="n">1</span><div class="t">Validate<br>request</div></div>
+        <div class="step done"><span class="n">2</span><div class="t">Planner<br>first</div></div>
+        <div class="step done"><span class="n">3</span><div class="t">Orchestrator<br>routes</div></div>
+        <div class="step done"><span class="n">4</span><div class="t">Analysis /<br>drafting</div></div>
+        <div class="step done"><span class="n">5</span><div class="t">Assurance<br>checks</div></div>
+        <div class="step stop"><span class="n">6</span><div class="t">Human<br>approval</div></div>
+        <div class="step done"><span class="n">7</span><div class="t">Finalize<br>+ export</div></div>
+      </div>
+      <div class="two">
+        <article class="card amber">
+          <h3>Persist first</h3>
+          <p>The UI writes the decision to SQLite <strong>before</strong> <code>Command(resume=...)</code>. A crash leaves a durable record, not a lost approval.</p>
+        </article>
+        <article class="card teal">
+          <h3>Then re-verify</h3>
+          <p>The graph re-reads the persisted review for the <strong>exact version and hash</strong>. A forged resume payload cannot finalize a task.</p>
+        </article>
+      </div>
+      <div class="quote"><strong>Approve → finalize</strong> · <strong>Reject → terminal</strong> · <strong>Revise → bounded loop with a new version</strong></div>
+    </div>
+    <aside class="notes">
+      <p>Slow down here. Persist-first, resume-second is the core defense.</p>
+      <p>Approval is not a boolean flag; it is bound to version id + SHA-256.</p>
+    </aside>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide" data-title="Agents and skills">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">06 / 16</div>
+    </div>
+    <div class="content top">
+      <p class="eyebrow">Agents and skills</p>
+      <h2>Six agents, six skills, narrow contracts</h2>
+      <table class="table-compact">
+        <thead><tr><th>Agent</th><th>Type</th><th>Skill</th><th>Core constraint</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Planner</strong></td><td>LLM</td><td><code>task-planning</code></td><td>Plan only from a fixed executor whitelist; report missing information.</td></tr>
+          <tr><td><strong>Document Analyst</strong></td><td>LLM</td><td><code>document-extraction</code></td><td>Claim needs filename + location. Skip instruction-like text.</td></tr>
+          <tr><td><strong>Evidence Verifier</strong></td><td>LLM</td><td><code>evidence-verification</code></td><td>Use supplied passages only. Never verify from model memory.</td></tr>
+          <tr><td><strong>Report Writer</strong></td><td>LLM</td><td><code>report-writing</code></td><td>Required sections. No invented facts. No external-action claims.</td></tr>
+          <tr><td><strong>Independent Reviewer</strong></td><td>LLM</td><td><code>quality-review</code></td><td>Never rewrites or self-approves. Returns pass / revise / fail.</td></tr>
+          <tr><td><strong>Policy Checker</strong></td><td>Deterministic</td><td><code>untrusted-content-handling</code></td><td>Required sections, citations, secrets, injection leftovers.</td></tr>
+        </tbody>
+      </table>
+      <p class="kicker">Every execution records agent, level, skill, status, retries, error class, and simulated flag.</p>
+    </div>
+    <aside class="notes">
+      <p>The Policy Checker is not another opinion. It checks required sections, citations, secrets, injection leftovers, and external-action claims.</p>
+      <p>The Reviewer never rewrites the draft. The human is the final authority.</p>
+    </aside>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide" data-title="Untrusted input and grounding">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">07 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Trust boundaries</p>
+      <h2>Untrusted in. Grounded out.</h2>
+      <div class="two">
+        <article class="card amber">
+          <h3>Uploaded text is data</h3>
+          <ul>
+            <li>Wrapped in <code>&lt;untrusted_document&gt;</code> delimiters</li>
+            <li>Scanned for ignore / override / reveal patterns</li>
+            <li>Instruction-like sentences skipped</li>
+            <li>Zero action tools to hijack — no email, shell, browser</li>
+            <li>Human approval remains mandatory</li>
+          </ul>
+        </article>
+        <article class="card teal">
+          <h3>Every claim is traceable</h3>
+          <ul>
+            <li>Filename + location for each extracted claim</li>
+            <li>Supported / unsupported / conflicting / unverified</li>
+            <li>Required Sources and Limitations sections</li>
+            <li>Deterministic policy check + independent reviewer</li>
+            <li>Human sees the evidence before approving</li>
+          </ul>
+        </article>
+      </div>
+      <div class="quote"><strong>TC-06:</strong> injection text does not reach the draft; a clean deadline from the same file survives.</div>
+    </div>
+    <aside class="notes">
+      <p>Call it defense-in-depth, not a guarantee. Regex detection is incomplete; the empty tool allowlist and human gate are backstops.</p>
+    </aside>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" data-title="Selective routing">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">08 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Selective routing</p>
+      <h2>Run only what the plan requires</h2>
+      <div class="three">
+        <article class="card">
+          <h3>Summary</h3>
+          <p><strong>Document Analyst</strong><br>→ assurance → human</p>
+          <p class="kicker">Verifier and writer are never called.</p>
+        </article>
+        <article class="card">
+          <h3>Outline</h3>
+          <p><strong>Analyst → Writer</strong><br>→ assurance → human</p>
+          <p class="kicker">No verifier.</p>
+        </article>
+        <article class="card">
+          <h3>Report / meeting brief</h3>
+          <p><strong>Analyst → Verifier → Writer</strong><br>→ assurance → human</p>
+          <p class="kicker">All three executor roles visible.</p>
+        </article>
+      </div>
+      <div class="two">
+        <div class="checkline">Routing is driven by validated subtasks, not a model improvising at runtime.</div>
+        <div class="checkline">Every destination is checked against a fixed whitelist and logged with a reason.</div>
+      </div>
+      <div class="quote"><strong>TC-13</strong> proves a summary creates no verifier or writer execution rows.</div>
+    </div>
+    <aside class="notes">
+      <p>For the course demo, use a report request so all three executor boxes are visible.</p>
+      <p>Selective routing is better engineering and is tested, not hidden.</p>
+    </aside>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide" data-title="Governance rules">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">09 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Governance</p>
+      <h2>Eight rules. Enforced in code.</h2>
+      <div class="four" style="grid-template-columns:repeat(4,1fr)">
+        <div class="rule"><span class="rulenum">01</span><div><strong>Human approval</strong><span>Before finalization or export</span></div></div>
+        <div class="rule"><span class="rulenum">02</span><div><strong>No fabrication</strong><span>Source ref or UNVERIFIED</span></div></div>
+        <div class="rule"><span class="rulenum">03</span><div><strong>Untrusted input</strong><span>Documents are data, not instructions</span></div></div>
+        <div class="rule"><span class="rulenum">04</span><div><strong>Privacy</strong><span>Redact secrets/PII; gate external LLM</span></div></div>
+        <div class="rule"><span class="rulenum">05</span><div><strong>Least privilege</strong><span>State slicing; no action tools</span></div></div>
+        <div class="rule"><span class="rulenum">06</span><div><strong>Auditability</strong><span>Routing, agents, decisions recorded</span></div></div>
+        <div class="rule"><span class="rulenum">07</span><div><strong>Bounded autonomy</strong><span>Retries, revisions, recursion limits</span></div></div>
+        <div class="rule"><span class="rulenum">08</span><div><strong>Transparency</strong><span>Simulated output is labeled</span></div></div>
+      </div>
+      <div class="two">
+        <div class="checkline">Each rule has an owner, enforcement point, evidence, failure behavior, residual risk, and tests.</div>
+        <div class="checkline">If a control cannot be enforced in code, it is documented as a limitation — never sold as a rule.</div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p>These are not advisory prompts. GR-01 is the approval gate; GR-02 grounding; GR-03 untrusted input; GR-04 privacy; GR-05 least privilege; GR-06 audit; GR-07 limits; GR-08 transparency.</p>
+    </aside>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide" data-title="NIST AI RMF">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">10 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">NIST AI RMF</p>
+      <h2>Claims and gaps, side by side</h2>
+      <div class="four">
+        <article class="card teal">
+          <h3>GOVERN</h3>
+          <p>Rule owners, accountability, third-party provider gate, approval policy.</p>
+        </article>
+        <article class="card teal">
+          <h3>MAP</h3>
+          <p>Purpose, single-user context, non-goals, affected parties, nine risks.</p>
+        </article>
+        <article class="card teal">
+          <h3>MEASURE</h3>
+          <p>Audit, 67 tests, groundedness, citation coverage, revisions, elapsed time.</p>
+        </article>
+        <article class="card teal">
+          <h3>MANAGE</h3>
+          <p>Block / escalate, limits, recovery, residual-risk acceptance, open actions.</p>
+        </article>
+      </div>
+      <article class="card amber">
+        <h3>Stated gaps</h3>
+        <p>Live provider behavior unverified · regex detection incomplete · single-user local prototype · no fairness evaluation · no formal impact study · no backup/restore procedure.</p>
+      </article>
+      <p class="kicker">This is a course worksheet, not a certification. No benchmark numbers are invented.</p>
+    </div>
+    <aside class="notes">
+      <p>Do not claim certification. The worksheet separates verified controls from open actions.</p>
+    </aside>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide" data-title="Human approval">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">11 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Human approval</p>
+      <h2>Bound to the exact output</h2>
+      <div class="flow"><span class="hl">draft v1 + SHA-256</span>
+      → human reads draft, claims, evidence, findings
+      → decision persisted in SQLite (actor = human:*)
+      → graph resume → re-read approval → re-check hash
+      → <span class="hl">finalize</span> → <span class="hl">export re-check</span> → approved Markdown / TXT</div>
+      <div class="two">
+        <article class="card amber">
+          <h3>New version?</h3>
+          <p>The prior approval becomes <strong>stale</strong>. Only the current version can be reviewed.</p>
+        </article>
+        <article class="card red">
+          <h3>Content changed?</h3>
+          <p>Finalize and export <strong>refuse</strong>. The stored hash no longer matches.</p>
+        </article>
+      </div>
+      <p class="kicker">Integrity detection, not a cryptographic signature. Local DB tampering is documented as residual risk.</p>
+    </div>
+    <aside class="notes">
+      <p>Only human:* actors may write decisions. Agents never import the approval module.</p>
+      <p>The hash is not non-repudiation; be explicit about that.</p>
+    </aside>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" data-title="Live demo">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">12 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Live demo · 4 minutes</p>
+      <h2>From upload to approved export</h2>
+      <div class="two">
+        <article class="card teal">
+          <h3>Path</h3>
+          <div class="checkline">New Task → report request + <code>project_notes.txt</code></div>
+          <div class="checkline">Workflow → agent hierarchy + routing log</div>
+          <div class="checkline">Workflow → Task details and audit</div>
+          <div class="checkline">Review → version, hash, evidence, decision</div>
+          <div class="checkline">Approve version N → acknowledgment → finalize</div>
+          <div class="checkline">History → status filter + Markdown/TXT export</div>
+          <div class="checkline">Optional: injection fixture</div>
+        </article>
+        <article class="card amber">
+          <h3>What to watch</h3>
+          <div class="checkline">Amber SIMULATED OUTPUT banner remains visible</div>
+          <div class="checkline">Dark sidebar and page header</div>
+          <div class="checkline">Planner runs first</div>
+          <div class="checkline">Routing reasons + whitelist</div>
+          <div class="checkline">Green reserved for human approval</div>
+          <div class="checkline">Hash on the Review page</div>
+          <div class="checkline">Decision recorded before resume</div>
+          <div class="checkline">Tokenized badges + 44px targets</div>
+          <div class="checkline">Export re-verification</div>
+        </article>
+      </div>
+      <div>
+        <div class="timeline" aria-hidden="true">
+          <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="timeline-labels"><span>0:00 submit</span><span>1:00 inspect</span><span>2:00 approve</span><span>3:00 export</span><span>4:00 done</span></div>
+      </div>
+      <div class="quote"><strong>Fallback:</strong> if the UI fails, say so and use recorded screenshots and test evidence. Never fake a live result.</div>
+    </div>
+    <aside class="notes">
+      <p>Keep the demo capped at four minutes. If it is slow, narrate the audit trail instead of clicking ahead.</p>
+      <p>If the app fails, switch to the transparent fallback. Do not simulate a click.</p>
+    </aside>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide" data-title="Tests">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">13 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Evaluation</p>
+      <h2>67 passed. Here is what that means.</h2>
+      <div class="metrics">
+        <div class="metric"><div class="value">51</div><div class="label">unit + integration<br>models · DB · approvals · extraction · skills · governance · metrics</div></div>
+        <div class="metric"><div class="value">13</div><div class="label">end-to-end scenarios<br>TC-01 to TC-13 on the real graph and SQLite</div></div>
+        <div class="metric"><div class="value">3</div><div class="label">Streamlit UI flows<br>all pages + approval, rejection, revision</div></div>
+      </div>
+      <div class="flow" style="font-size:clamp(10px,.98vw,13px);line-height:1.55">.\.venv\Scripts\python.exe -m pytest tests\ -q
+67 passed in 12.13s</div>
+      <div class="two">
+        <div class="checkline"><strong>Proven:</strong> approval, tamper detection, injection, routing, escalation, audit redaction, UI flow.</div>
+        <div class="xline"><strong>Not proven:</strong> live provider quality/latency, full accessibility audit, visual diff vs mockup, OCR, multi-user load, disk failure.</div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p>The mock LLM is a real LangChain BaseChatModel, so the invoke → parse → validate → retry path is exercised.</p>
+      <p>Offer the command. Distinguish what the tests prove from what they do not.</p>
+    </aside>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide" data-title="Limitations">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">14 / 16</div>
+    </div>
+    <div class="content">
+      <p class="eyebrow">Limitations</p>
+      <h2>Honest limits</h2>
+      <div class="two">
+        <article class="card amber">
+          <h3>Not verified</h3>
+          <div class="xline">Live OpenRouter / Gemini / OpenAI calls</div>
+          <div class="xline">Real-model quality and latency</div>
+          <div class="xline">Browser-level accessibility and CSS</div>
+          <div class="xline">Statistical quality benchmark</div>
+        </article>
+        <article class="card red">
+          <h3>Residual risk</h3>
+          <div class="xline">Local SQLite can be rewritten</div>
+          <div class="xline">Hash is integrity, not a signature</div>
+          <div class="xline">Regex detection is incomplete</div>
+          <div class="xline">Single user, no auth, no OCR</div>
+        </article>
+      </div>
+      <div class="quote" style="font-size:clamp(16px,1.8vw,24px)">Confidence comes from naming limits, not hiding them.</div>
+      <p class="kicker">Full disclosure: README §7, testing §7, risk register, NIST worksheet, final report §7.</p>
+    </div>
+    <aside class="notes">
+      <p>If asked whether real GPT/Gemini was tested: no. The adapters are implemented; no live call was made.</p>
+      <p>The hash detects stale or altered content. It cannot stop a local administrator who rewrites the database.</p>
+    </aside>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide dark" data-title="Conclusion">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">15 / 16</div>
+    </div>
+    <div class="content">
+      <div class="eyebrow">Conclusion</div>
+      <h1 style="color:#f8fafc;max-width:1050px">Generation is probabilistic.<br><span style="color:#5eead4">Authority is not.</span></h1>
+      <p class="lede" style="color:#cbd5e1;max-width:1000px">Planner → Orchestrator → three executors → Reviewer → Human → Output.</p>
+      <div class="two" style="max-width:1000px">
+        <div class="checkline" style="color:#e2e8f0">6 agents · 6 skills · 8 governance rules · 9 risks</div>
+        <div class="checkline" style="color:#e2e8f0">Approval bound to the exact version and SHA-256 hash</div>
+        <div class="checkline" style="color:#e2e8f0">67 automated tests · mock mode verified</div>
+        <div class="checkline" style="color:#e2e8f0">Real-provider mode implemented but not verified</div>
+      </div>
+      <p class="lede" style="color:#99f6e4;font-weight:700;margin-top:6px">Thank you — questions?</p>
+    </div>
+    <aside class="notes">
+      <p>Close on the central lesson. Then invite questions. Keep the Q&amp;A backup slide ready.</p>
+    </aside>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide" data-title="Q&A backup">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark">A</span> AegisFlow</div>
+      <div class="slide-no">16 / 16</div>
+    </div>
+    <div class="content top">
+      <p class="eyebrow">Q&amp;A backup</p>
+      <h2>Answers to the likely challenges</h2>
+      <table>
+        <thead><tr><th>Question</th><th>Short answer</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Is this really LangGraph?</strong></td><td>Root <code>StateGraph</code>, three team subgraphs, <code>interrupt()</code> / <code>Command(resume=...)</code>, SQLite checkpointer, whitelist routing.</td></tr>
+          <tr><td><strong>How do you stop prompt injection?</strong></td><td>Delimit, scan, no tools, policy check, human gate. Defense-in-depth, not a guarantee.</td></tr>
+          <tr><td><strong>Why not always run all agents?</strong></td><td>Plan-driven routing cuts cost, latency, and failure surface. TC-13 proves selective execution.</td></tr>
+          <tr><td><strong>What is not done?</strong></td><td>Live provider run, browser-level UI test, OCR, authentication/multi-user, backup/restore.</td></tr>
+          <tr><td><strong>Is the hash a signature?</strong></td><td>No. It is integrity detection only. Local tampering remains a disclosed residual risk.</td></tr>
+          <tr><td><strong>Why deterministic team leads?</strong></td><td>They own permissions, ordering, and retries. A model-driven supervisor could be persuaded to skip assurance.</td></tr>
+        </tbody>
+      </table>
+      <p class="kicker">Use only when asked. Do not read this slide unprompted.</p>
+    </div>
+    <aside class="notes">
+      <p>Use only when asked. Do not read this slide unprompted.</p>
+    </aside>
+  </section>
+
+</main>
+
+<div class="hud" aria-label="Presentation controls">
+  <div class="hud-left">
+    <button class="iconbtn" id="prev" title="Previous slide (←)" aria-label="Previous slide">←</button>
+    <button class="iconbtn" id="next" title="Next slide (→)" aria-label="Next slide">→</button>
+    <span class="counter" id="counter">01 / 16</span>
+  </div>
+  <div class="hud-right">
+    <button class="iconbtn" id="notesBtn" title="Speaker notes (N)" aria-label="Toggle speaker notes">N</button>
+    <button class="iconbtn" id="helpBtn" title="Keyboard help (?)" aria-label="Keyboard help">?</button>
+    <button class="iconbtn" id="fullBtn" title="Fullscreen (F)" aria-label="Toggle fullscreen">⛶</button>
+  </div>
+</div>
+
+<aside class="notes-panel" id="notesPanel" aria-live="polite">
+  <div class="nhead"><span>Speaker notes</span><span id="notesSlide">01</span></div>
+  <div id="notesBody"></div>
+</aside>
+
+<div class="help" id="helpPanel" role="dialog" aria-modal="true" aria-label="Keyboard help">
+  <div class="help-card">
+    <h3>Keyboard shortcuts</h3>
+    <div class="help-grid">
+      <span class="key">→ / Space</span><span>Next slide</span>
+      <span class="key">←</span><span>Previous slide</span>
+      <span class="key">Home / End</span><span>First / last slide</span>
+      <span class="key">N</span><span>Toggle speaker notes</span>
+      <span class="key">F</span><span>Fullscreen</span>
+      <span class="key">?</span><span>This help</span>
+      <span class="key">Esc</span><span>Close help / notes</span>
+      <span class="key">Swipe</span><span>Navigate on touch devices</span>
+    </div>
+    <button id="helpClose">Close</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const total = slides.length;
+  let index = 0;
+  const counter = document.getElementById("counter");
+  const progress = document.getElementById("progress");
+  const notesPanel = document.getElementById("notesPanel");
+  const notesBody = document.getElementById("notesBody");
+  const notesSlide = document.getElementById("notesSlide");
+  const helpPanel = document.getElementById("helpPanel");
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  function renderNotes() {
+    const note = slides[index].querySelector(".notes");
+    notesBody.innerHTML = note ? note.innerHTML : "<p>No notes for this slide.</p>";
+    notesSlide.textContent = pad(index + 1);
+  }
+
+  function show(i, push) {
+    index = Math.max(0, Math.min(total - 1, i));
+    slides.forEach((slide, n) => {
+      slide.classList.toggle("active", n === index);
+      slide.setAttribute("aria-hidden", n === index ? "false" : "true");
+    });
+    counter.textContent = pad(index + 1) + " / " + pad(total);
+    progress.style.width = (((index + 1) / total) * 100) + "%";
+    renderNotes();
+    if (push !== false) {
+      const nextHash = "#" + (index + 1);
+      if (window.location.hash !== nextHash) {
+        history.replaceState(null, "", nextHash);
+      }
+    }
+  }
+
+  function next() { show(index + 1); }
+  function prev() { show(index - 1); }
+
+  function toggleNotes() {
+    notesPanel.classList.toggle("open");
+    if (notesPanel.classList.contains("open")) renderNotes();
+  }
+
+  function toggleHelp(force) {
+    const open = typeof force === "boolean" ? force : !helpPanel.classList.contains("open");
+    helpPanel.classList.toggle("open", open);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      // Fullscreen may be blocked; navigation still works.
+    }
+  }
+
+  function fromHash() {
+    const n = parseInt((window.location.hash || "").replace("#", ""), 10);
+    return Number.isFinite(n) && n >= 1 && n <= total ? n - 1 : 0;
+  }
+
+  document.getElementById("next").addEventListener("click", next);
+  document.getElementById("prev").addEventListener("click", prev);
+  document.getElementById("notesBtn").addEventListener("click", toggleNotes);
+  document.getElementById("helpBtn").addEventListener("click", () => toggleHelp(true));
+  document.getElementById("helpClose").addEventListener("click", () => toggleHelp(false));
+  document.getElementById("fullBtn").addEventListener("click", toggleFullscreen);
+
+  helpPanel.addEventListener("click", (event) => {
+    if (event.target === helpPanel) toggleHelp(false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const tag = (event.target && event.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+    if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+      event.preventDefault(); next();
+    } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+      event.preventDefault(); prev();
+    } else if (event.key === "Home") {
+      event.preventDefault(); show(0);
+    } else if (event.key === "End") {
+      event.preventDefault(); show(total - 1);
+    } else if (event.key.toLowerCase() === "n") {
+      event.preventDefault(); toggleNotes();
+    } else if (event.key.toLowerCase() === "f") {
+      event.preventDefault(); toggleFullscreen();
+    } else if (event.key === "?") {
+      event.preventDefault(); toggleHelp();
+    } else if (event.key === "Escape") {
+      toggleHelp(false);
+      notesPanel.classList.remove("open");
+    }
+  });
+
+  // Touch navigation
+  let touchStartX = null;
+  let touchStartY = null;
+  document.addEventListener("touchstart", (event) => {
+    const t = event.changedTouches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+  }, { passive: true });
+  document.addEventListener("touchend", (event) => {
+    if (touchStartX === null) return;
+    const t = event.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    touchStartX = null; touchStartY = null;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) next(); else prev();
+    }
+  }, { passive: true });
+
+  window.addEventListener("hashchange", () => show(fromHash(), false));
+
+  // Initial slide from URL hash.
+  show(fromHash(), false);
+})();
+</script>
+</body>
+</html>

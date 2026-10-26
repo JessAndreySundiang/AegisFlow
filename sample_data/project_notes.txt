@@ -1,0 +1,9 @@
+AegisFlow Sample Project Notes
+Project: Northstar Documentation Cleanup
+Owner: Maria Santos
+Deadline: 15 November 2026
+Budget: PHP 120,000
+Requirement: All reports must cite the source document.
+Risk: The vendor's draft uses outdated figures.
+Decision: The team approved the revised timeline on 3 October 2026.
+Contact: juan.delacruz@example.com

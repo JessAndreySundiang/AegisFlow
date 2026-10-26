@@ -1,0 +1,80 @@
+# AegisFlow theme template.
+# Copy to .streamlit/config.toml. Keep both theme tables so users can switch modes.
+# Native badges/alerts still need a visual contrast check; AegisFlow uses custom status badges.
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+baseFontSize = 16
+baseFontWeight = 400
+codeFontSize = "0.875rem"
+codeFontWeight = 400
+baseRadius = "0.75rem"
+buttonRadius = "0.5rem"
+metricValueFontSize = "2rem"
+metricValueFontWeight = 600
+headingFontSizes = ["2rem", "1.5rem", "1.25rem", "1.125rem", "1rem", "0.875rem"]
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+showSidebarBorder = true
+
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&display=swap, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap, ui-monospace, SFMono-Regular, Consolas, monospace"
+
+[theme.light]
+primaryColor = "#0F766E"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#EEF2F7"
+textColor = "#0F172A"
+borderColor = "#7C8EA8"
+linkColor = "#0F766E"
+linkUnderline = true
+codeBackgroundColor = "#E8EEF5"
+codeTextColor = "#0F172A"
+dataframeHeaderBackgroundColor = "#EEF2F7"
+dataframeHeaderTextColor = "#0F172A"
+dataframeBorderColor = "#7C8EA8"
+showWidgetBorder = true
+grayColor = "#475569"
+blueColor = "#1D4ED8"
+greenColor = "#166534"
+orangeColor = "#92400E"
+redColor = "#991B1B"
+violetColor = "#5B21B6"
+
+[theme.light.sidebar]
+backgroundColor = "#EEF2F7"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F172A"
+primaryColor = "#0F766E"
+borderColor = "#7C8EA8"
+
+[theme.dark]
+primaryColor = "#0F766E"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#121B2E"
+textColor = "#E6EDF7"
+borderColor = "#586E93"
+linkColor = "#2DD4BF"
+linkUnderline = true
+codeBackgroundColor = "#0A101C"
+codeTextColor = "#E6EDF7"
+dataframeHeaderBackgroundColor = "#121B2E"
+dataframeHeaderTextColor = "#E6EDF7"
+dataframeBorderColor = "#586E93"
+showWidgetBorder = true
+grayColor = "#9FB0C8"
+blueColor = "#60A5FA"
+greenColor = "#4ADE80"
+orangeColor = "#FBBF24"
+redColor = "#F87171"
+violetColor = "#A78BFA"
+
+[theme.dark.sidebar]
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#121B2E"
+textColor = "#E6EDF7"
+primaryColor = "#0F766E"
+borderColor = "#586E93"

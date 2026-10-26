@@ -1,0 +1,123 @@
+/* AegisFlow tokens and base primitives. Colors use light-dark() for theme switching. */
+
+[data-testid="stApp"] {
+  --ag-bg: #F9FAFC;
+  --ag-surface: #FFFFFF;
+  --ag-secondary: #F1F5F9;
+  --ag-text: #0F172A;
+  --ag-muted: #5B6B82;
+  --ag-primary: #0E766D;
+  --ag-on-primary: #FFFFFF;
+  --ag-accent: #0E766D;
+  --ag-border: #7C8EA8;
+  --ag-border-subtle: #DDE3EC;
+  --ag-focus: #0E766D;
+  --ag-warning: #B45309;
+  --ag-warning-bg: #FFF8EC;
+  --ag-warning-border: #D97706;
+  --ag-success: #15803D;
+  --ag-danger: #B91C1C;
+  --ag-sidebar: #0B1320;
+  --ag-sidebar-selected: #1B2A47;
+  --ag-sidebar-text: #E5EDF8;
+  --ag-sidebar-muted: #94A3B8;
+  --ag-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ag-font-heading: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ag-font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+@supports (color: light-dark(#000, #fff)) {
+  [data-testid="stApp"] {
+    --ag-bg: light-dark(#F9FAFC, #0B1220);
+    --ag-surface: light-dark(#FFFFFF, #111C2E);
+    --ag-secondary: light-dark(#F1F5F9, #16243A);
+    --ag-text: light-dark(#0F172A, #E6EDF7);
+    --ag-muted: light-dark(#5B6B82, #A9B8CC);
+    --ag-primary: light-dark(#0E766D, #0F766E);
+    --ag-accent: light-dark(#0E766D, #2DD4BF);
+    --ag-border: light-dark(#7C8EA8, #586E93);
+    --ag-border-subtle: light-dark(#DDE3EC, #2A3A52);
+    --ag-focus: light-dark(#0E766D, #2DD4BF);
+    --ag-warning: light-dark(#B45309, #FCD34D);
+    --ag-warning-bg: light-dark(#FFF8EC, #2A2113);
+    --ag-warning-border: light-dark(#D97706, #FBBF24);
+    --ag-success: light-dark(#15803D, #86EFAC);
+    --ag-danger: light-dark(#B91C1C, #FCA5A5);
+    --ag-status-pending-fg: light-dark(#475569, #CBD5E1);
+    --ag-status-pending-bg: light-dark(#F1F5F9, #1A2438);
+    --ag-status-pending-border: light-dark(#64748B, #94A3B8);
+    --ag-status-active-fg: light-dark(#1D4ED8, #93C5FD);
+    --ag-status-active-bg: light-dark(#EFF6FF, #12233F);
+    --ag-status-active-border: light-dark(#2563EB, #60A5FA);
+    --ag-status-review-fg: light-dark(#B45309, #FCD34D);
+    --ag-status-review-bg: light-dark(#FFF8EC, #2A2113);
+    --ag-status-review-border: light-dark(#B45309, #FBBF24);
+    --ag-status-approved-fg: light-dark(#15803D, #86EFAC);
+    --ag-status-approved-bg: light-dark(#ECFDF3, #12291B);
+    --ag-status-approved-border: light-dark(#15803D, #4ADE80);
+    --ag-status-rejected-fg: light-dark(#B91C1C, #FCA5A5);
+    --ag-status-rejected-bg: light-dark(#FEF2F2, #2A1517);
+    --ag-status-rejected-border: light-dark(#B91C1C, #F87171);
+    --ag-status-blocked-fg: light-dark(#6D28D9, #C4B5FD);
+    --ag-status-blocked-bg: light-dark(#F5F3FF, #211A38);
+    --ag-status-blocked-border: light-dark(#6D28D9, #A78BFA);
+  }
+}
+
+[data-testid="stApp"] { font-family: var(--ag-font-body); background: var(--ag-bg); color: var(--ag-text); }
+[data-testid="stApp"] h1, [data-testid="stApp"] h2, [data-testid="stApp"] h3,
+[data-testid="stApp"] h4, [data-testid="stApp"] h5, [data-testid="stApp"] h6 {
+  font-family: var(--ag-font-heading); letter-spacing: -.02em; color: var(--ag-text);
+}
+[data-testid="stApp"] p, [data-testid="stApp"] li { line-height: 1.55; }
+[data-testid="stApp"] [data-testid="stCaptionContainer"] { color: var(--ag-muted); }
+[data-testid="stApp"] [data-testid="stMarkdownContainer"] p { max-width: 72ch; }
+
+.ag-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  min-height: 1.75rem; padding: .2rem .6rem;
+  border: 1px solid var(--ag-badge-border, var(--ag-border));
+  border-radius: 999px;
+  background: var(--ag-badge-bg, var(--ag-secondary));
+  color: var(--ag-badge-fg, var(--ag-text));
+  font-size: .8125rem; font-weight: 600; line-height: 1.2; white-space: nowrap;
+}
+.ag-badge svg { width: .95rem; height: .95rem; flex: 0 0 auto; }
+.ag-status-pending { --ag-badge-fg: var(--ag-status-pending-fg); --ag-badge-bg: var(--ag-status-pending-bg); --ag-badge-border: var(--ag-status-pending-border); }
+.ag-status-active, .ag-status-planning, .ag-status-in_progress { --ag-badge-fg: var(--ag-status-active-fg); --ag-badge-bg: var(--ag-status-active-bg); --ag-badge-border: var(--ag-status-active-border); }
+.ag-status-review, .ag-status-awaiting_human_review { --ag-badge-fg: var(--ag-status-review-fg); --ag-badge-bg: var(--ag-status-review-bg); --ag-badge-border: var(--ag-status-review-border); }
+.ag-status-approved, .ag-status-completed { --ag-badge-fg: var(--ag-status-approved-fg); --ag-badge-bg: var(--ag-status-approved-bg); --ag-badge-border: var(--ag-status-approved-border); }
+.ag-status-rejected, .ag-status-failed { --ag-badge-fg: var(--ag-status-rejected-fg); --ag-badge-bg: var(--ag-status-rejected-bg); --ag-badge-border: var(--ag-status-rejected-border); }
+.ag-status-blocked, .ag-status-revision_requested { --ag-badge-fg: var(--ag-status-blocked-fg); --ag-badge-bg: var(--ag-status-blocked-bg); --ag-badge-border: var(--ag-status-blocked-border); }
+
+.ag-simulated {
+  display: block; margin: 0 0 1.25rem;
+  padding: .7rem 1rem; border: 1px solid var(--ag-warning-border);
+  border-left-width: 4px; border-radius: 10px;
+  background: var(--ag-warning-bg); color: var(--ag-warning);
+  font-size: .875rem; line-height: 1.45;
+}
+.ag-simulated strong { font-weight: 700; letter-spacing: .01em; }
+
+.ag-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+[data-testid="stApp"] [data-testid="stButton"] button,
+[data-testid="stApp"] [data-testid="stFormSubmitButton"] button,
+[data-testid="stApp"] [data-testid="stDownloadButton"] button,
+[data-testid="stApp"] button[data-testid^="stBaseButton"] { min-height: 44px; border-radius: 8px; font-weight: 600; }
+[data-testid="stApp"] [data-testid="stButton"] button[kind="primary"],
+[data-testid="stApp"] [data-testid="stFormSubmitButton"] button[kind="primary"] {
+  background: var(--ag-primary); border-color: var(--ag-primary); color: var(--ag-on-primary);
+}
+[data-testid="stApp"] [data-testid="stButton"] button[kind="secondary"],
+[data-testid="stApp"] [data-testid="stFormSubmitButton"] button[kind="secondary"] {
+  background: var(--ag-surface); border: 1px solid var(--ag-border-subtle); color: var(--ag-text);
+}
+[data-testid="stApp"] :focus-visible { outline: 2px solid var(--ag-focus); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

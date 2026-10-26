@@ -24,4 +24,6 @@ Rows 3–5 record the state at that phase. Their “Playwright missing / NOT RUN
 
 Evidence screenshots: `ui_checks/width_360.png`, `width_768.png`, `width_1280.png`, `width_1536.png`.
 
+Published: <https://github.com/JessAndreySundiang/AegisFlow> (public, `main` branch).
+
 Limitations reported honestly: no live provider call was executed, no axe accessibility audit or pixel-diff against the mockup PDF was run, and the screenshots were reviewed by eye rather than by an automated visual regression tool.

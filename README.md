@@ -5,6 +5,8 @@ A governed, hierarchical multi-agent document-task prototype built with **LangGr
 AegisFlow turns uploaded PDF/TXT/DOCX files into a reviewed deliverable through a visible chain of specialist agents. It is designed around one rule: **no output is finalized, exported as final, or marked complete without a human approval bound to the exact output version and content hash.**
 
 > **Status: working prototype, mock mode verified.** All 67 automated tests pass. Real LLM mode is implemented but **not verified** because real mode was not enabled and no live provider call was made. See [Verification status](#verification-status).
+>
+> **Repository:** <https://github.com/JessAndreySundiang/AegisFlow>
 
 ---
 

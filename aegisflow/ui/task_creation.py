@@ -155,7 +155,10 @@ def render(services) -> None:
                 if settings.simulated and not undisclosed_ack:
                     st.error("Please acknowledge the simulated-output condition.")
                     return
-                with st.spinner("Planner and agents are running..."):
+                with st.status(
+                    "Running the governed workflow...", expanded=True
+                ) as status:
+                    st.write("Planner → analysts → draft → assurance → human review")
                     _start(
                         services,
                         request.strip(),
@@ -163,6 +166,7 @@ def render(services) -> None:
                         manual_minutes or None,
                         uploads,
                     )
+                    status.update(label="Workflow started", state="complete")
 
     with side_col:
         with st.container(border=True, key="ag-card-next"):

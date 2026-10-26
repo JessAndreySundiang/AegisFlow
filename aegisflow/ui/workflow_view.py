@@ -110,6 +110,11 @@ def render(services) -> None:
         f"{common.short_text(task.request, 120)} · Version {version} · Reviewer: {verdict}",
         right=lambda: components.render_badge(task.status),
     )
+    meta_col, refresh_col = st.columns([5, 1], vertical_alignment="center")
+    if refresh_col.button("Refresh", key="workflow-refresh"):
+        st.rerun()
+    elapsed = "—" if task.elapsed_seconds is None else f"{task.elapsed_seconds:.1f} s"
+    meta_col.caption(f"Last update {task.updated_at} · Elapsed {elapsed}")
     if task.escalation_reason:
         st.error(f"Reason: {task.escalation_reason}", icon=":material/block:")
 

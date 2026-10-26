@@ -46,4 +46,11 @@ Published: <https://github.com/JessAndreySundiang/AegisFlow> (public, `main` bra
 - **B4 provider contracts:** fake LangChain chat models exercise the real-provider code path with no network: valid and fenced JSON, malformed output without retry, timeout/429 retries ending in `TransientProviderError`, 401 as non-retryable `LLMError`, and construction guards.
 - Suite is now **90 passed** (13 E2E + 74 unit/integration + 3 UI); coverage **78%** (branch), CI gate 75%.
 
-Limitations reported honestly: no live provider call was executed, no axe accessibility audit or pixel-diff against the mockup PDF was run, and the screenshots were reviewed by eye rather than by an automated visual regression tool. The CI workflow is committed and its status must be read from GitHub Actions, not assumed.
+## UI/UX phases A–D — 26 October 2026
+
+- **A accessibility:** vendored axe-core 4.10.2 and added `check_accessibility.py` (five pages × light/dark) plus `check_pages.py` (five pages × four widths). The caption contrast failure came from Streamlit's 60% caption opacity; overriding it with the muted token brought axe to **0 WCAG 2.1 A/AA violations**. Added a skip link, version read from `pyproject.toml`, visible focus, and reduced-motion support.
+- **B browser CI:** Playwright is now a dev dependency; a new Ubuntu `browser` job seeds a review task with `tools/seed_demo.py`, starts the app, runs the page sweep and axe, and uploads `ui-evidence`.
+- **C flow polish:** Review shows consequence text per decision, promotes the reviewer field, and keeps the decision panel sticky on mobile. New Task uses a stage status instead of an opaque spinner. History gains search and pagination (8/page) with a total count. Dashboard adds a review CTA; Workflow adds refresh plus last-update/elapsed metadata.
+- **D design:** deep ocean-navy gradient rail (no pure black), teal-tinted canvas, soft card shadows, and a documented palette in `docs/ui_design.md`; theme 16/16 and contrast 40/40 still pass.
+
+Limitations reported honestly: no live provider call was executed and no pixel-diff against the mockup PDF was run. Accessibility is now automated (axe-core: 0 WCAG 2.1 A/AA violations on all five pages, light and dark), and the browser page sweep runs in CI. CI status must be read from GitHub Actions, not assumed.

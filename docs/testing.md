@@ -137,9 +137,19 @@ PASS width=1536 scrollWidth=1536 bodyWidth=1536 innerWidth=1536
 RESULT PASS
 ```
 
-Playwright and Chromium were installed in the local `.venv` for verification only; neither is listed in `requirements.txt`. The script loads the live mock-mode app at each width and writes full-page screenshots to `ui_checks/width_*.png`. It checks horizontal overflow, not accessibility or visual fidelity to the mockup.
+Playwright and Chromium are development-only dependencies (`requirements-dev.txt`), not runtime requirements. `check_responsive.py` checks overflow at four widths, `check_pages.py` sweeps all five pages at those widths, and `check_accessibility.py` runs the vendored axe-core 4.10.2 in light and dark mode. Generated screenshots and audit JSON live under `ui_checks/pages/` and `ui_checks/axe/`, which are CI artifacts and are not committed.
 
 A separate browser spot-check navigated to **Review** and **History** at 1280 and 360 px (`ui_checks/review_1280.png`, `review_360.png`, `history_1280.png`, `history_360.png`). Review showed the version/hash header, the amber “Awaiting review” badge, and the read-only draft; History showed 44 px Delete/Export row actions with no clipping, and the collapsed sidebar at 360 px still reached every page.
+
+Browser and accessibility record:
+
+```text
+$ python .opencode/skills/aegisflow-ui/scripts/check_pages.py http://localhost:8502
+RESULT PASS    (5 pages × 4 widths, no horizontal overflow)
+
+$ python .opencode/skills/aegisflow-ui/scripts/check_accessibility.py http://localhost:8502
+RESULT PASS    (5 pages × 2 themes, 0 WCAG 2.1 A/AA violations)
+```
 
 Engineering checks:
 
@@ -152,7 +162,7 @@ TOTAL                                     3299    584    996    236    78%
 90 passed
 ```
 
-`pyproject.toml` configures lint, pytest, and branch coverage; `requirements-dev.txt` pins `ruff` and `pytest-cov`. CI (`.github/workflows/ci.yml`) runs lint, tests with a 75% coverage gate, and the theme/contrast checks on Windows and Ubuntu. Settings fallout is covered by `test_settings.py`: missing authorization, key, or model must fall back to mock, and `describe()` must never expose a key.
+`pyproject.toml` configures lint, pytest, and branch coverage; `requirements-dev.txt` pins `ruff`, `pytest-cov`, and `playwright`. CI (`.github/workflows/ci.yml`) runs lint, tests with a 75% coverage gate, and theme/contrast on Windows and Ubuntu, plus a seeded browser job on Ubuntu that installs Chromium, sweeps all five pages, runs axe, and uploads `ui-evidence`. Settings fallback is covered by `test_settings.py`: missing authorization, key, or model must fall back to mock, and `describe()` must never expose a key.
 
 ---
 
@@ -173,6 +183,7 @@ TOTAL                                     3299    584    996    236    78%
 - Revision and assurance loops escalate at their limits.
 - Summary routing skips verifier and writer; orchestrator routes stay whitelisted.
 - All five Streamlit pages render under `AppTest`; approval finalizes the task, and rejection requires a separate terminal confirmation.
+- In a real browser, all five pages render at 360/768/1280/1536 px with no horizontal overflow, and axe-core reports 0 WCAG 2.1 A/AA violations in light and dark mode.
 - The UI uses icon+text status badges, 44px approval targets, version-named approval actions, and a responsive hierarchy. Green is reserved for human-approved output; SIMULATED is amber.
 - Theme tokens pass 16/16 checks and contrast passes 40/40 checks.
 
@@ -182,7 +193,7 @@ TOTAL                                     3299    584    996    236    78%
 |---|---|---|
 | Live OpenRouter/OpenAI/Gemini calls | Real mode not enabled | **Not executed** |
 | Real-model output quality/latency | Same | **Not measured** |
-| Browser rendering/accessibility | `AppTest` is headless; Playwright responsive check PASS at four widths with screenshots; no axe audit | **Partially checked** |
+| Browser rendering/accessibility | Playwright page sweep PASS at four widths; axe-core 0 WCAG 2.1 A/AA violations (light + dark); no pixel-diff | **Verified** |
 | OCR of scanned PDFs | Not implemented | **Not applicable** |
 | Multi-user/concurrent access | Single-user design | **Not tested** |
 | Files > 10 MB | Rejected by design; boundary unit test exists | **Partially tested** |
@@ -207,7 +218,7 @@ TOTAL                                     3299    584    996    236    78%
 ## 9. Known test limitations and future work
 
 1. Add a real-provider test that is skipped unless all four real-mode conditions are present, and record latency/error rates when run.
-2. Add a browser-level accessibility audit (axe) and visual regression checks; Playwright responsive checks already pass at 360/768/1280/1536.
+2. Add a pixel-diff baseline against the mockup for visual regressions; axe accessibility and the five-page browser sweep already run in CI.
 3. Add a larger injection corpus, including encoded and delimiter-breaking payloads.
 4. Add concurrency/load tests only if the deployment model changes.
 5. Add backup/restore tests for both SQLite files.

@@ -1,13 +1,15 @@
-"""Shared presentation helpers: navigation, banners, workflow strip, tables."""
+"""Shared presentation helpers: navigation, banners, tables, and app version."""
 
 from __future__ import annotations
 
+import tomllib
 from collections.abc import Iterable
+from functools import lru_cache
 from typing import Any
 
 import streamlit as st
 
-from config import Settings
+from config import PROJECT_ROOT, Settings
 
 from ..models import TaskRecord, TaskStatus
 from . import components
@@ -58,6 +60,16 @@ def navigate(page: str) -> None:
 
 def status_label(status: str | TaskStatus) -> str:
     return components.status_label(status)
+
+
+@lru_cache(maxsize=1)
+def app_version() -> str:
+    """Read the version from pyproject so the sidebar cannot drift."""
+    try:
+        with (PROJECT_ROOT / "pyproject.toml").open("rb") as handle:
+            return str(tomllib.load(handle)["project"]["version"])
+    except (OSError, KeyError, tomllib.TOMLDecodeError):
+        return "0.6.0"
 
 
 def active_task(db) -> TaskRecord | None:
@@ -112,7 +124,7 @@ def render_sidebar(services) -> None:
         mode = "Mock mode" if settings.simulated else "Real mode"
         st.markdown(
             f'<div class="ag-sidebar-footer"><span class="ag-mode-dot"></span>'
-            f"{mode} · v0.1.0</div>",
+            f"{mode} · v{app_version()}</div>",
             unsafe_allow_html=True,
         )
 

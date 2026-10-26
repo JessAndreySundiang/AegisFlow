@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import math
 
 import streamlit as st
 
@@ -240,12 +241,44 @@ def render(services) -> None:
         right=filter_widget,
     )
     status_filter = selected["value"]
-    tasks = db.list_tasks(limit=20, status=None if status_filter == "all" else status_filter)
+    search = st.text_input(
+        "Search tasks",
+        placeholder="Task ID or request text",
+        key="history_search",
+    ).strip().lower()
+    tasks = db.list_tasks(
+        limit=100, status=None if status_filter == "all" else status_filter
+    )
+    if search:
+        tasks = [
+            task
+            for task in tasks
+            if search in common.display_id(task.id).lower()
+            or search in (task.request or "").lower()
+        ]
+    total = len(tasks)
+    per_page = 8
+    pages = max(1, math.ceil(total / per_page))
+    current = min(max(1, int(st.session_state.get("history_page", 1))), pages)
+    st.session_state["history_page"] = current
+    start = (current - 1) * per_page
+    paged = tasks[start : start + per_page]
     with st.container(border=True, key="ag-card-history"):
-        if tasks:
-            _table(services, tasks)
+        if paged:
+            _table(services, paged)
         else:
             st.info("No tasks match this filter.")
+    if total > per_page:
+        prev_col, info_col, next_col = st.columns(
+            [1, 3, 1], vertical_alignment="center"
+        )
+        if prev_col.button("Previous", disabled=current <= 1, width="stretch"):
+            st.session_state["history_page"] = current - 1
+            st.rerun()
+        info_col.caption(f"Page {current} of {pages} · {total} tasks")
+        if next_col.button("Next", disabled=current >= pages, width="stretch"):
+            st.session_state["history_page"] = current + 1
+            st.rerun()
     st.markdown(
         '<div class="ag-history-foot">Approved exports include approval details and are checked '
         "again each time. Rejected or blocked output cannot be exported.</div>",

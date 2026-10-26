@@ -16,14 +16,14 @@ Use for any request to design, build, style, theme, polish, review, or fix a UI,
 1. **Understand** — Identify the screen, the user's main task, and the one primary action. The five AegisFlow screens are Dashboard, New Task, Workflow, Review, History.
 2. **Apply tokens** — Use only `references/design-tokens.md`. Do not invent colors, fonts, spacing, radii, or status colors. Do not add hex values to Python.
 3. **Build native-first** — Prefer `.streamlit/config.toml` and native Streamlit elements. Add CSS only for what configuration cannot do, in `aegisflow/ui/styles.css`, `aegisflow/ui/app.css`, and `aegisflow/ui/mockup.css`, injected by `aegisflow/ui/theme.py`. Put reusable HTML in `components.py` and structured cards in `hierarchy.py`.
-4. **Verify** — Run `scripts/check_theme.py` and `scripts/check_contrast.py`. Run `scripts/check_responsive.py` only if Playwright is installed; otherwise report NOT RUN.
+4. **Verify** — Run `scripts/check_theme.py`, `scripts/check_contrast.py`, `scripts/check_pages.py`, and `scripts/check_accessibility.py` when Playwright is installed; otherwise report the browser checks as NOT RUN.
 5. **Review** — Walk `references/review-checklist.md`; report each item PASS/FAIL/not run. Do not claim visual or mobile checks that were not executed.
 
 ## Core visual system (mockup fidelity)
 
-- **Dark navy sidebar**: `#0B1320` base; active/selected navigation item `#1B2A47`; subtle border `#1E293B`.
-- **Main surface**: Near-white `#F9FAFC` (`#F8FAFC`); dark mode surface `#0B1220` / `#121B2E`.
-- **Bordered cards**: White `#FFFFFF` with subtle 1px border (`var(--ag-border-subtle)`) and `12px` border radius.
+- **Deep ocean-navy sidebar**: `#0C1F31` base with a teal-tinted gradient (`#0C2033 → #0A1A2B → #0B2831`), never pure black; selected item uses a translucent teal wash plus a 3px teal edge.
+- **Main surface**: Near-white `#F9FAFC` (`#F8FAFC`); dark mode surface `#0B1220` / `#121B2E`; subtle teal radial tint at the top-right of the canvas.
+- **Bordered cards**: White `#FFFFFF` with subtle 1px border (`var(--ag-border-subtle)`), `12px` border radius, and a soft two-layer shadow.
 - **Primary action**: Deep teal `#0E766D` (`#0F766E`) with white text, minimum `44px` target height.
 - **Status pill rules**: Inline badge with SVG icon + text label + tinted background + border. Status is never conveyed by color alone.
 - **Structured agent hierarchy**: Grouped cards from Level 0 (Authority: Governance rules, Human gate), Level 1 (Command: Planner, Orchestrator), Level 2 (Team leads: Analysis, Drafting, Assurance), down to Level 3 (Specialists: Document analyst, Evidence verifier, Report writer, Policy checker, Reviewer).
@@ -59,14 +59,16 @@ Use for any request to design, build, style, theme, polish, review, or fix a UI,
 | Pass/fail UI review | `references/review-checklist.md` |
 | Theme template | `assets/theme.config.toml` |
 | CSS template | `assets/styles.css` |
+| axe-core 4.10.2 (MPL-2.0, vendored) | `assets/axe.min.js` |
 
 ## Verification commands
 
 ```powershell
 .\.venv\Scripts\python.exe .opencode\skills\aegisflow-ui\scripts\check_theme.py .streamlit\config.toml
 .\.venv\Scripts\python.exe .opencode\skills\aegisflow-ui\scripts\check_contrast.py .streamlit\config.toml --css aegisflow\ui\styles.css
-.\.venv\Scripts\python.exe .opencode\skills\aegisflow-ui\scripts\check_responsive.py http://localhost:8501
+.\.venv\Scripts\python.exe .opencode\skills\aegisflow-ui\scripts\check_pages.py http://localhost:8501
+.\.venv\Scripts\python.exe .opencode\skills\aegisflow-ui\scripts\check_accessibility.py http://localhost:8501
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
 
-`check_responsive.py` requires Playwright. If Playwright is absent, report as NOT RUN; do not claim it passed.
+The browser checks require Playwright (a dev dependency). If it is absent, report them as NOT RUN; do not claim they passed.

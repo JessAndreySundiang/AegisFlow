@@ -174,7 +174,7 @@ The master prompt contains 15 acceptance criteria. Their status:
 | Live Gemini provider | Same | Same with `AEGISFLOW_PROVIDER=gemini` |
 | Live OpenAI provider | Same | Same with `AEGISFLOW_PROVIDER=openai` |
 | Real-model output quality | Same | Labelled evaluation set; groundedness and citation review |
-| Browser CSS/accessibility | `AppTest` is headless; Playwright checks overflow and captures screenshots only | axe accessibility audit + pixel-diff against the mockup |
+| Browser CSS/accessibility | axe-core 0 WCAG 2.1 A/AA violations (5 pages × light/dark) and Playwright page sweep in CI | Pixel-diff against the mockup |
 | Multi-user concurrency | Single-user design | Load/concurrency test with auth |
 | Disk-full/SQLite corruption recovery | Out of scope | Fault-injection and restore test |
 | OCR for scanned PDFs | Not implemented | Add OCR pipeline and fixtures |

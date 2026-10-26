@@ -372,7 +372,7 @@ Expected body: `ok`.
 6. **The review pane is not redacted.** It must show source-derived content for a meaningful review; handle it accordingly.
 7. **No external actions.** AegisFlow never sends email, runs shell commands, browses the web, or moves money.
 8. **No fairness or bias evaluation.** The system is not intended for decisions about people.
-9. **Browser-level accessibility and visual fidelity are not fully tested.** The UI is exercised headlessly with Streamlit `AppTest`; Playwright (Chromium) loads the live mock app at 360/768/1280/1536, confirms no horizontal overflow, and captures screenshots in `ui_checks/`. No axe accessibility audit and no pixel-diff against the mockup PDF were run.
+9. **Visual fidelity is not pixel-diffed.** The UI is covered by a Playwright page sweep (five pages at 360/768/1280/1536) and an axe-core WCAG 2.1 A/AA audit that reports 0 violations in light and dark mode, but no pixel comparison against the mockup PDF is run.
 
 Detailed controls and residual risks: [governance_rules.md](governance_rules.md), [risk_assessment.md](risk_assessment.md), [testing.md](testing.md).
 

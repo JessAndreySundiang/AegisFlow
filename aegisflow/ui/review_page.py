@@ -177,11 +177,10 @@ def _render_decision_form(services, task, payload: dict) -> None:
     with st.container(border=True, key="ag-decision-form"):
         st.markdown('<div class="ag-card-title">Your decision</div>', unsafe_allow_html=True)
         st.caption("Approval applies only to this version and its content hash.")
-        with st.expander("Reviewer details"):
-            reviewer = st.text_input(
-                "Reviewer name",
-                value=st.session_state.get("reviewer_name", "Local Reviewer"),
-            )
+        reviewer = st.text_input(
+            "Reviewer name",
+            value=st.session_state.get("reviewer_name", "Local Reviewer"),
+        )
         decision = st.radio(
             "Decision",
             list(labels.keys()),
@@ -189,6 +188,19 @@ def _render_decision_form(services, task, payload: dict) -> None:
             index=None,
             key=f"decision_{task.id}",
         )
+        consequences = {
+            HumanDecision.APPROVE.value: (
+                "Finalizes this exact version and unlocks the approved Markdown/TXT export."
+            ),
+            HumanDecision.REJECT.value: (
+                "Terminal. The task closes and approved export stays blocked."
+            ),
+            HumanDecision.REQUEST_REVISION.value: (
+                "Returns the work with your feedback; the revision budget is limited."
+            ),
+        }
+        if decision in consequences:
+            st.caption(consequences[decision])
         feedback = ""
         revision_target = "drafting"
         if decision in {HumanDecision.REJECT.value, HumanDecision.REQUEST_REVISION.value}:

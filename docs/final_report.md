@@ -352,7 +352,7 @@ The interface is backed by the project-scoped `aegisflow-ui` skill (`.opencode/s
 
 Technical material is deliberately collapsed or moved off the primary path: raw task IDs and thread details are not shown, runtime configuration is not duplicated in the sidebar, routing and audit tables sit under “Task details and audit”, and the content hash and technical checks sit under “Version fingerprint and technical checks”. This keeps the approval task visible without hiding governance evidence.
 
-UI verification: `check_theme.py` passes 16/16, `check_contrast.py` passes 40/40 in both light and dark themes, and the headless `AppTest` suite exercises all five pages plus approval, rejection, and revision flows. Playwright with Chromium is installed in the local `.venv` for verification only; `check_responsive.py` now passes at 360, 768, 1280, and 1536 px and writes full-page screenshots to `ui_checks/`. A full accessibility (axe) audit and a pixel-diff comparison against the mockup PDF were still not run.
+UI verification: `check_theme.py` passes 16/16, `check_contrast.py` passes 40/40 in both light and dark themes, and the headless `AppTest` suite exercises all five pages plus approval, rejection, and revision flows. Playwright with Chromium is a development-only dependency; `check_pages.py` passes all five pages at 360, 768, 1280, and 1536 px and `check_accessibility.py` reports 0 WCAG 2.1 A/AA violations with axe-core in both themes. A pixel-diff comparison against the mockup PDF was still not run.
 
 ### 5.6 Exports
 
@@ -440,7 +440,7 @@ Duration varies by machine. The recorded result is the actual run, not an estima
 |---|---|---|
 | Live OpenRouter/OpenAI/Gemini calls | **Not executed** | Real mode not enabled; no call authorized |
 | Real-model output quality/latency | **Not measured** | Same |
-| Browser CSS/accessibility | **Partially checked** | `AppTest` is headless; Playwright responsive PASS at four widths with screenshots, but no axe audit or visual diff |
+| Browser CSS/accessibility | **Verified** | Playwright page sweep at four widths; axe-core 0 WCAG 2.1 A/AA violations (light + dark); no pixel-diff |
 | Multi-user/concurrency | **Not tested** | Single-user design |
 | OCR | **Not implemented** | Out of scope |
 | Disk-full/SQLite corruption | **Not tested** | Out of scope |
@@ -528,7 +528,7 @@ Redacting the draft would make a meaningful review impossible: the reviewer must
 6. **Draft is not automatically redacted.** Reviewers must handle source PII appropriately.
 7. **No external actions.** The system cannot send, publish, or execute anything.
 8. **No fairness/bias evaluation.** Not intended for decisions about people.
-9. **Browser-level UI testing is partial.** `AppTest` does not render CSS. Playwright now checks horizontal overflow and captures screenshots at 360/768/1280/1536, but no axe accessibility audit or pixel-diff against the mockup was performed.
+9. **Browser-level UI testing is partial.** `AppTest` does not render CSS. Playwright now covers all five pages at four widths and axe-core reports 0 WCAG 2.1 A/AA violations in both themes, but no pixel-diff against the mockup was performed.
 10. **No statistical benchmark.** No claim of real-model quality is made.
 11. **Lead iteration limits are fixed in code.** Team run limits and revision budgets are configurable; lead loops are fixed for safety.
 12. **No backup/restore procedure.** Operators should copy both SQLite files before experimentation.

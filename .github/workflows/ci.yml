@@ -50,3 +50,62 @@ jobs:
 
       - name: Contrast
         run: python .opencode/skills/aegisflow-ui/scripts/check_contrast.py
+
+  browser:
+    name: browser (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      AEGISFLOW_DATA_DIR: .ci-data
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Seed a review-gate task
+        run: python tools/seed_demo.py --data-dir .ci-data
+
+      - name: Start the app
+        run: |
+          python -m streamlit run app.py --server.headless true \
+            --server.port 8501 --server.address 127.0.0.1 > streamlit.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then
+              echo "app ready"
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8501/_stcore/health
+
+      - name: Page sweep at four widths
+        run: python .opencode/skills/aegisflow-ui/scripts/check_pages.py http://127.0.0.1:8501
+
+      - name: axe accessibility audit
+        run: python .opencode/skills/aegisflow-ui/scripts/check_accessibility.py http://127.0.0.1:8501
+
+      - name: Upload UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-evidence
+          path: |
+            ui_checks/pages
+            ui_checks/axe
+            streamlit.log
+          if-no-files-found: warn

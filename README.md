@@ -219,6 +219,7 @@ AegisFlow/
 | Audit and redaction | **Implemented and verified** | TC-12 |
 | Streamlit UI | **Implemented and verified headlessly** | `AppTest` approval and rejection flows; server health `ok`; Playwright responsive check PASS at 360/768/1280/1536 |
 | UI design system | **Implemented and verified** | `aegisflow-ui` skill; theme 16/16 PASS; contrast 40/40 PASS; responsive check PASS with screenshots |
+| Accessibility | **Verified** | axe-core 0 WCAG 2.1 A/AA violations on five pages in light and dark; skip link, live focus, reduced-motion, 44 px targets |
 | Real OpenRouter / Gemini / OpenAI | **Implemented, not executed** | Real mode was not enabled; no live call recorded; see limitation below |
 | OCR for scanned PDFs | **Not implemented** | Documented limitation |
 | Multi-user auth / remote deployment | **Not implemented** | Single-user local prototype |
@@ -231,7 +232,7 @@ Other known limitations:
 - PII is redacted from logs, not from the source-derived draft shown to the reviewer.
 - Regex-based secret/PII detection can miss unusual identifiers.
 - The UI is a single-user local app with no login.
-- Playwright and Chromium are installed in the local `.venv` for verification only (not in `requirements.txt`). The responsive check passes at 360/768/1280/1536 px with screenshots in `ui_checks/`, but no automated accessibility (axe) audit or pixel-diff comparison against the mockup PDF was run.
+- Playwright and Chromium are development-only tools (`requirements-dev.txt`). The page sweep passes at 360/768/1280/1536 px, and axe-core reports **0 WCAG 2.1 A/AA violations** on all five pages in light and dark mode (screenshots in `ui_checks/`, CI artifact `ui-evidence`). No pixel-diff against the mockup PDF was run.
 
 ---
 
@@ -254,6 +255,7 @@ Other known limitations:
 | 13 | Final report | [docs/final_report.md](docs/final_report.md) |
 | 14 | Requirements traceability | [docs/requirements_traceability.md](docs/requirements_traceability.md) |
 | 15 | UI design system skill | [.opencode/skills/aegisflow-ui/](.opencode/skills/aegisflow-ui/) + [design_preview.py](.opencode/skills/aegisflow-ui/design_preview.py) |
+| 16 | UI design guide | [docs/ui_design.md](docs/ui_design.md) |
 
 ---
 

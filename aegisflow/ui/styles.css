@@ -17,10 +17,13 @@
   --ag-warning-border: #D97706;
   --ag-success: #15803D;
   --ag-danger: #B91C1C;
-  --ag-sidebar: #0B1320;
-  --ag-sidebar-selected: #1B2A47;
+  --ag-sidebar: #0C1F31;
+  --ag-sidebar-selected: rgba(45, 212, 191, 0.14);
   --ag-sidebar-text: #E5EDF8;
   --ag-sidebar-muted: #94A3B8;
+  --ag-sidebar-gradient: radial-gradient(120% 85% at 0% 0%, rgba(20, 184, 166, 0.20), transparent 55%),
+    linear-gradient(180deg, #0C2033 0%, #0A1A2B 52%, #0B2831 100%);
+  --ag-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px -24px rgba(15, 23, 42, 0.45);
   --ag-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --ag-font-heading: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --ag-font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -70,7 +73,11 @@
   font-family: var(--ag-font-heading); letter-spacing: -.02em; color: var(--ag-text);
 }
 [data-testid="stApp"] p, [data-testid="stApp"] li { line-height: 1.55; }
-[data-testid="stApp"] [data-testid="stCaptionContainer"] { color: var(--ag-muted); }
+[data-testid="stApp"] [data-testid="stCaptionContainer"] { color: var(--ag-muted); opacity: 1; }
+[data-testid="stApp"] [data-testid="stCaptionContainer"] p {
+  color: var(--ag-muted) !important;
+  opacity: 1 !important;
+}
 [data-testid="stApp"] [data-testid="stMarkdownContainer"] p { max-width: 72ch; }
 
 .ag-badge {

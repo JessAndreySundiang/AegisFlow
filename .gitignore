@@ -7,6 +7,8 @@ __pycache__/
 htmlcov/
 coverage.xml
 .tmp/
+.ci-data/
+.data/
 .env
 .env.local
 data/*.sqlite
@@ -15,4 +17,6 @@ data/uploads/
 logs/
 streamlit.log
 ui_checks/*.log
+ui_checks/pages/
+ui_checks/axe/
 .DS_Store

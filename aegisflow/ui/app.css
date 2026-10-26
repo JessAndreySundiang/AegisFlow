@@ -1,14 +1,19 @@
 /* AegisFlow app shell and page layout. */
 
-[data-testid="stAppViewContainer"] { background: var(--ag-bg); }
+[data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(900px 520px at 88% -12%, rgba(20, 184, 166, 0.08), transparent 62%),
+    var(--ag-bg);
+}
 [data-testid="stHeader"] { background: transparent; height: 0; }
 [data-testid="stMainBlockContainer"] {
   max-width: 1180px; margin: 0 auto; padding: 2.25rem 2rem 3rem;
 }
 [data-testid="stSidebar"] {
-  background: var(--ag-sidebar);
+  background-color: var(--ag-sidebar);
+  background-image: var(--ag-sidebar-gradient);
 }
-[data-testid="stSidebar"] > div { background: var(--ag-sidebar); }
+[data-testid="stSidebar"] > div { background: transparent; }
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
   display: flex; flex-direction: column; min-height: calc(100vh - 6rem);
   padding: 1.5rem 1rem 1.25rem;
@@ -31,9 +36,10 @@
 }
 [data-testid="stSidebar"] [data-testid="stButton"] button p { font-size: .95rem; }
 [data-testid="stSidebar"] [data-testid="stButton"] button > div { justify-content: flex-start; width: 100%; }
-[data-testid="stSidebar"] [data-testid="stButton"] button:hover { background: #142136; color: #FFFFFF; }
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover { background: rgba(45, 212, 191, 0.10); color: #FFFFFF; }
 [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
-  background: var(--ag-sidebar-selected); color: #2DD4BF; font-weight: 600;
+  background: var(--ag-sidebar-selected); color: #5EEAD4; font-weight: 600;
+  box-shadow: inset 3px 0 0 #2DD4BF;
 }
 [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover {
   background: var(--ag-sidebar-selected); color: #2DD4BF;
@@ -69,6 +75,7 @@
 [data-testid="stApp"] .st-key-ag-decision-card,
 [data-testid="stApp"] .st-key-ag-decision-form {
   background: var(--ag-surface); border-color: var(--ag-border-subtle);
+  box-shadow: var(--ag-card-shadow);
 }
 [data-testid="stApp"] [data-testid="stForm"] { border: 0; padding: 0; }
 [data-testid="stApp"] [data-testid="stTextArea"] textarea,
@@ -119,4 +126,17 @@
   .st-key-ag-page-header [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
   .st-key-ag-page-header [data-testid="stColumn"] { min-width: 0; flex: 1 1 100%; }
   .st-key-ag-header-actions { justify-content: flex-start; }
+  .st-key-ag-decision-form {
+    position: sticky; bottom: .5rem; z-index: 30;
+    box-shadow: 0 -10px 30px -20px rgba(15, 23, 42, 0.55), var(--ag-card-shadow);
+  }
 }
+
+.ag-skip-link {
+  position: fixed; left: 1rem; top: -4.5rem; z-index: 10000;
+  padding: .65rem 1rem; border: 2px solid var(--ag-primary); border-radius: 8px;
+  background: var(--ag-surface); color: var(--ag-text); font-weight: 600;
+  transition: top .15s ease;
+}
+.ag-skip-link:focus { top: 1rem; }
+.ag-metric { box-shadow: var(--ag-card-shadow); }

@@ -27,6 +27,11 @@ RENDERERS = {
 def main() -> None:
     theme.inject_theme()
     common.init_state()
+    st.markdown(
+        '<a class="ag-skip-link" href="#ag-main">Skip to main content</a>'
+        '<div id="ag-main" tabindex="-1"></div>',
+        unsafe_allow_html=True,
+    )
     services = get_services()
     common.render_sidebar(services)
     common.render_flash()

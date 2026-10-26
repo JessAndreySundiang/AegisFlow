@@ -57,10 +57,19 @@ def render(services) -> None:
     )
     tasks = db.list_tasks(limit=5)
 
+    def _header_actions() -> None:
+        if awaiting:
+            st.button(
+                f"Review {awaiting} task{'s' if awaiting != 1 else ''}",
+                on_click=lambda: common.navigate("Review"),
+                width="stretch",
+            )
+        st.button("New task", type="primary", on_click=_new_task, width="stretch")
+
     layout.page_header(
         "Dashboard",
         "AI does the repetitive work. You approve every final output.",
-        right=lambda: st.button("New task", type="primary", on_click=_new_task),
+        right=_header_actions,
     )
     layout.metric_grid(
         [

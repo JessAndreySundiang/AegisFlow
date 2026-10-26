@@ -108,13 +108,21 @@ def render_sidebar(services) -> None:
     settings = services.settings
     with st.sidebar:
         st.markdown('<div class="ag-brand">AegisFlow</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="ag-flow-hint">Create → run → approve → export</div>',
+            unsafe_allow_html=True,
+        )
         page = st.session_state.get("page", "Dashboard")
         if page not in PAGES:
             page = "Dashboard"
             st.session_state["page"] = page
+        awaiting = services.db.counts_by_status().get("awaiting_human_review", 0)
         for item in PAGES:
+            label = PAGE_LABELS.get(item, item)
+            if item == "Review" and awaiting:
+                label = f"{label} · {awaiting}"
             st.button(
-                PAGE_LABELS.get(item, item),
+                label,
                 key=f"nav_{item}",
                 type="primary" if item == page else "secondary",
                 on_click=_go_to,

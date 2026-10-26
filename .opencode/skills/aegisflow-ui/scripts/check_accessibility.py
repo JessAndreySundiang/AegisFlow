@@ -50,6 +50,15 @@ def open_sidebar(page) -> None:
             return
 
 
+def click_nav(page, name: str) -> None:
+    """Click a sidebar navigation button by name, ignoring in-page actions."""
+    nav = page.locator(
+        '[data-testid="stSidebar"] [data-testid="stButton"] button'
+    ).filter(has_text=name).first
+    nav.evaluate("el => el.click()")
+    page.wait_for_timeout(1200)
+
+
 def main(argv: list[str]) -> int:
     url = argv[1] if len(argv) > 1 else "http://localhost:8501"
     try:
@@ -75,10 +84,7 @@ def main(argv: list[str]) -> int:
             page.add_script_tag(path=str(AXE))
             for name in PAGES:
                 if name != "Dashboard":
-                    page.get_by_role("button", name=name).first.evaluate(
-                        "el => el.click()"
-                    )
-                    page.wait_for_timeout(1200)
+                    click_nav(page, name)
                 violations = page.evaluate(SCRIPT)
                 blocking = [v for v in violations if v["impact"] in BLOCKING]
                 failed += len(blocking)

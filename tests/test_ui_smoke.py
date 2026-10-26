@@ -77,11 +77,17 @@ def test_ui_renders_pages_and_approval_flow_finalizes(tmp_path, monkeypatch):
     assert not at.exception
     assert [title.value for title in at.title] == ["Dashboard"]
     assert any("SIMULATED OUTPUT" in block.value for block in at.markdown)
+    assert any(button.label.startswith("Review · 1") for button in at.button)
 
     for page in ("New Task", "Workflow", "Review", "History"):
         at.session_state["page"] = page
         at.run()
         assert not at.exception, (page, [e.message for e in at.exception])
+
+    # History routes awaiting tasks into the review gate.
+    at.session_state["page"] = "History"
+    at.run()
+    assert any(button.label == "Review" for button in at.button)
 
     # Open the seeded task's review gate.
     at.session_state["active_task_id"] = task_id
@@ -91,6 +97,7 @@ def test_ui_renders_pages_and_approval_flow_finalizes(tmp_path, monkeypatch):
     assert [title.value for title in at.title] == [f"Review · T-{task_id[:4].upper()}"]
     assert any(input_.label.startswith("Content hash") for input_ in at.text_input)
     assert any(area.label == "Draft" for area in at.text_area)
+    assert any(button.label == "View agent trace" for button in at.button)
 
     # The action names the exact version. Submitting without acknowledging is refused.
     decision = next(r for r in at.radio if r.label == "Decision")

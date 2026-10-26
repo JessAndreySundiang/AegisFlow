@@ -49,6 +49,10 @@
 }
 [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.ag-sidebar-footer) { margin-top: auto; }
 .ag-sidebar-footer { margin-top: auto; color: var(--ag-sidebar-muted); font-size: .75rem; padding: 2rem .35rem 0; }
+.ag-flow-hint {
+  color: var(--ag-sidebar-muted); font-size: .72rem; letter-spacing: .02em;
+  margin: -.9rem 0 1rem .35rem;
+}
 .ag-mode-dot {
   display: inline-block; width: .5rem; height: .5rem; margin-right: .4rem;
   border-radius: 999px; background: #FBBF24; vertical-align: .05em;

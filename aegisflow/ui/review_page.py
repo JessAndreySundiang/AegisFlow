@@ -342,6 +342,10 @@ def render(services) -> None:
         st.error("The interrupted state does not contain a complete versioned draft.")
         return
 
+    trace_col, _ = st.columns([1, 3])
+    if trace_col.button("View agent trace", key="review-trace", width="stretch"):
+        common.navigate("Workflow")
+
     left, right = st.columns([2.1, 1], gap="large")
     with left:
         with st.container(border=True, key="ag-card-draft"):

@@ -40,6 +40,11 @@ def _request_delete(task_id: str) -> None:
     st.session_state["delete_task_id"] = task_id
 
 
+def _open_review(task_id: str) -> None:
+    st.session_state["active_task_id"] = task_id
+    st.session_state["page"] = "Review"
+
+
 def _export_button(services, task, version: int | None) -> None:
     if task.status not in {TaskStatus.APPROVED, TaskStatus.COMPLETED}:
         if task.status in {TaskStatus.REJECTED, TaskStatus.BLOCKED, TaskStatus.FAILED}:
@@ -47,6 +52,14 @@ def _export_button(services, task, version: int | None) -> None:
                 "Delete",
                 key=f"delete_{task.id}",
                 on_click=_request_delete,
+                args=(task.id,),
+                width="stretch",
+            )
+        elif task.status == TaskStatus.AWAITING_HUMAN_REVIEW:
+            st.button(
+                "Review",
+                key=f"review_{task.id}",
+                on_click=_open_review,
                 args=(task.id,),
                 width="stretch",
             )

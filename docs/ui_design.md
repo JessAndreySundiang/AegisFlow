@@ -49,6 +49,17 @@ The rail is deliberately **not** pure black: it is a deep teal-navy gradient wit
 - **Cards** — white surface, subtle border, soft shadow; no nested card borders.
 - **Skip link** — first focusable element, jumps to `#ag-main`.
 
+### Navigation signposting
+
+The five tabs follow the job sequence `Create → run → approve → export`:
+
+- The sidebar shows that sequence as a muted hint and appends the waiting count to **Review** (`Review · 2`).
+- **Review** links to the task's agent trace without changing tabs.
+- **History** shows a **Review** action on awaiting rows, and export/delete on terminal rows.
+- **Workflow** links to the approval gate when the graph is interrupted.
+
+Labels and routes stay stable so documentation, tests, and the safety language do not drift.
+
 ## 6. Accessibility evidence
 
 - axe-core 4.10.2, WCAG 2.1 A/AA, **0 violations** on Dashboard, New Task, Workflow, Review, and History in both light and dark mode.

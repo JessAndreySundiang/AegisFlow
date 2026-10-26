@@ -348,7 +348,7 @@ Five pages, aligned to the supplied mockup:
 
 Navigation uses a dark navy sidebar built from five Streamlit buttons that set the canonical `st.session_state["page"]`; the page key remains the single source of truth for programmatic navigation.
 
-The interface is backed by the project-scoped `aegisflow-ui` skill (`.opencode/skills/aegisflow-ui/`): `SKILL.md`, six references, three verification scripts, a theme template, base CSS, and a standalone `design_preview.py`. Tokens live in `aegisflow/ui/styles.css`; the app shell, cards, form controls, and decision radio live in `app.css`; tables, hierarchy, routing, evidence, next-steps, and history rows live in `mockup.css`. Status is never color-only: badges pair an icon with text, green is reserved for recorded human approval, agent progress uses blue/teal, SIMULATED is amber, approval actions name the version (“Approve version N”), rejection requires a separate terminal confirmation, and deletion uses an explicit `st.dialog`. Responsive rules stack the two-column layouts and metric grid below 900px and collapse the hierarchy and history table at phone widths.
+The interface is backed by the project-scoped `aegisflow-ui` skill (`.opencode/skills/aegisflow-ui/`): `SKILL.md`, six references, three verification scripts, a theme template, base CSS, and a `design_preview.py` preview page. Tokens live in `aegisflow/ui/styles.css`; the app shell, cards, form controls, and decision radio live in `app.css`; tables, hierarchy, routing, evidence, next-steps, and history rows live in `mockup.css`. Status is never color-only: badges pair an icon with text, green is reserved for recorded human approval, agent progress uses blue/teal, SIMULATED is amber, approval actions name the version (“Approve version N”), rejection requires a separate terminal confirmation, and deletion uses an explicit `st.dialog`. Responsive rules stack the two-column layouts and metric grid below 900px and collapse the hierarchy and history table at phone widths.
 
 Technical material is deliberately collapsed or moved off the primary path: raw task IDs and thread details are not shown, runtime configuration is not duplicated in the sidebar, routing and audit tables sit under “Task details and audit”, and the content hash and technical checks sit under “Version fingerprint and technical checks”. This keeps the approval task visible without hiding governance evidence.
 
@@ -584,10 +584,9 @@ Real mode: create `.env` from `.env.example`, add **one** key and **one** model 
 AegisFlow/
 ├── app.py                         Streamlit entry point
 ├── config.py                      Frozen settings and safe fallback
-├── design_preview.py              Standalone UI token/component preview
 ├── requirements.txt               Pinned, verified dependencies
 ├── .env.example                   Placeholders only; no real secrets
-├── .opencode/skills/aegisflow-ui/  UI design system, references, checks
+├── .opencode/skills/aegisflow-ui/  UI design system, references, checks, preview
 ├── aegisflow/
 │   ├── models.py                  Pydantic domain models and transitions
 │   ├── state.py                   Graph state and reducers

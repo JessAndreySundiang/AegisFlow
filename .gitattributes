@@ -1,0 +1,13 @@
+# Normalize line endings so Windows checkouts do not rewrite text files.
+* text=auto eol=lf
+
+# Binary artifacts must never be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.docx binary
+*.sqlite binary
+*.sqlite-wal binary
+*.sqlite-shm binary

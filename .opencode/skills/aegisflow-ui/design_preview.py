@@ -8,7 +8,7 @@ from pathlib import Path
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parent
-CSS_PATH = ROOT / ".opencode" / "skills" / "aegisflow-ui" / "assets" / "styles.css"
+CSS_PATH = ROOT / "assets" / "styles.css"
 
 st.set_page_config(page_title="AegisFlow UI preview", layout="wide")
 

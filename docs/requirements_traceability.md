@@ -76,7 +76,7 @@ The implementation deliberately exceeds the minimum counts while keeping every e
 | 11 | Human approval — where and why | Explanation + implementation | `docs/human_approval.md`; `aegisflow/approvals.py`; `aegisflow/ui/review_page.py` | TC-01–TC-05, TC-10; AppTest UI flow | **Verified** |
 | 12 | Final presentation | ≤ 15 minutes | `docs/presentation_script.md`; `docs/slides.md`; `slides/aegisflow_deck.html` | Timing plan 15:00; deck opens locally | **Complete** |
 
-Additional project-scoped deliverable: `.opencode/skills/aegisflow-ui/` contains the UI design system (`SKILL.md`, six references, three verification scripts, theme template, base CSS) and `design_preview.py`. Theme checks pass 16/16, contrast checks pass 40/40, and the Playwright (Chromium) check loads the live mock-mode app at 360/768/1280/1536, finds no horizontal overflow, and writes screenshots to `ui_checks/`. Playwright is installed in the local `.venv` for verification only and is not listed in `requirements.txt`.
+Additional project-scoped deliverable: `.opencode/skills/aegisflow-ui/` contains the UI design system (`SKILL.md`, six references, three verification scripts, theme template, base CSS, and its `design_preview.py` preview page). Theme checks pass 16/16, contrast checks pass 40/40, and the Playwright (Chromium) check loads the live mock-mode app at 360/768/1280/1536, finds no horizontal overflow, and writes screenshots to `ui_checks/`. Playwright is installed in the local `.venv` for verification only and is not listed in `requirements.txt`.
 
 ---
 

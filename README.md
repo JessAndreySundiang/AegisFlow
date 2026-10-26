@@ -165,10 +165,9 @@ Full rule definitions and enforcement points: [docs/governance_rules.md](docs/go
 AegisFlow/
 ├── app.py                     # Streamlit entry point
 ├── config.py                  # Settings, env validation, mock fallback
-├── design_preview.py          # Standalone UI token/component preview
 ├── requirements.txt
 ├── .env.example
-├── .opencode/skills/aegisflow-ui/ # Project UI design system, refs, checks
+├── .opencode/skills/aegisflow-ui/ # UI design system, refs, checks, preview
 ├── aegisflow/
 │   ├── models.py              # Pydantic models, enums, task transitions
 │   ├── state.py               # AegisState / TeamState and reducers
@@ -239,7 +238,7 @@ Other known limitations:
 | 12 | Slide deck | [slides/aegisflow_deck.html](slides/aegisflow_deck.html) + [docs/slides.md](docs/slides.md) |
 | 13 | Final report | [docs/final_report.md](docs/final_report.md) |
 | 14 | Requirements traceability | [docs/requirements_traceability.md](docs/requirements_traceability.md) |
-| 15 | UI design system skill | [.opencode/skills/aegisflow-ui/](.opencode/skills/aegisflow-ui/) + [design_preview.py](design_preview.py) |
+| 15 | UI design system skill | [.opencode/skills/aegisflow-ui/](.opencode/skills/aegisflow-ui/) + [design_preview.py](.opencode/skills/aegisflow-ui/design_preview.py) |
 
 ---
 

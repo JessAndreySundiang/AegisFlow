@@ -27,4 +27,9 @@ Evidence screenshots: `ui_checks/width_360.png`, `width_768.png`, `width_1280.pn
 
 Published: <https://github.com/JessAndreySundiang/AegisFlow> (public, `main` branch).
 
+## Repository cleanup — 26 October 2026
+
+- Removed the seven unused generic `.opencode/skills` packs (`ui-ux-pro-max`, `design`, `design-system`, `ui-styling`, `brand`, `slides`, `banner-design`): 172 files, 4.15 MB. AegisFlow's runtime loads only `skills/`; only `.opencode/skills/aegisflow-ui/` is referenced by the app, checks, and docs. The packs remain recoverable from git history (commit `d7ef2d9`) and the earlier “upstream preserved” note refers to that history.
+- Moved `design_preview.py` into `.opencode/skills/aegisflow-ui/` and added `.gitattributes` for LF normalization. No runtime code, tests, docs evidence, or demo data changed.
+
 Limitations reported honestly: no live provider call was executed, no axe accessibility audit or pixel-diff against the mockup PDF was run, and the screenshots were reviewed by eye rather than by an automated visual regression tool.

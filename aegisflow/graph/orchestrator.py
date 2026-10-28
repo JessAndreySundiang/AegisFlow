@@ -195,12 +195,18 @@ def orchestrator_node(
 
     # A summary has no writer; its formatted draft is created by the analysis wrapper.
     if not (state.get("draft") or "").strip():
+        version_number = state.get("draft_version")
+        blocked_reason = (
+            f"No new draft was produced; version {version_number} is unchanged."
+            if version_number
+            else "No draft was produced."
+        )
         return _route(
             state,
             db,
             "blocked",
             "No draft was produced by the selected agents.",
-            {"status": "blocked", "blocked_reason": "No draft was produced."},
+            {"status": "blocked", "blocked_reason": blocked_reason},
         )
 
     # ---------------------------------------------------------------- assurance
@@ -236,24 +242,59 @@ def orchestrator_node(
                     },
                 )
             feedback = _feedback_text(state)
+            if writer_needed:
+                return _route(
+                    state,
+                    db,
+                    "drafting_team",
+                    "Assurance asked for a bounded revision.",
+                    {
+                        "status": "in_progress",
+                        "phase": "drafting",
+                        "revision_count": revision_count + 1,
+                        "revision_feedback": feedback,
+                        "revision_target": "drafting",
+                        "draft": "",
+                        "policy_report": None,
+                        "review_result": None,
+                        "team_status": {"drafting": "pending", "assurance": "pending"},
+                        "subtask_status": _reset_status(state, {"report_writer"}),
+                        "retry_counts": {
+                            "team:drafting": _team_runs(state, "drafting") + 1,
+                        },
+                    },
+                )
+            # A summary/outline plan has no writer to revise. Sending it to the
+            # drafting team would produce nothing and block the task, so the
+            # revision re-runs analysis and lets the analysis wrapper rebuild the
+            # formatted summary. This mirrors the human revision path.
             return _route(
                 state,
                 db,
-                "drafting_team",
-                "Assurance asked for a bounded revision.",
+                "analysis_team",
+                "Assurance asked for a bounded revision; the plan has no writer to revise.",
                 {
                     "status": "in_progress",
-                    "phase": "drafting",
+                    "phase": "analysis",
                     "revision_count": revision_count + 1,
                     "revision_feedback": feedback,
-                    "revision_target": "drafting",
+                    "revision_target": "analysis",
+                    "claims": [],
+                    "evidence": [],
+                    "analysis_summary": "",
                     "draft": "",
                     "policy_report": None,
                     "review_result": None,
-                    "team_status": {"drafting": "pending", "assurance": "pending"},
-                    "subtask_status": _reset_writer_status(state),
+                    "team_status": {
+                        "analysis": "pending",
+                        "drafting": "pending",
+                        "assurance": "pending",
+                    },
+                    "subtask_status": _reset_status(
+                        state, {"document_analyst", "evidence_verifier"}
+                    ),
                     "retry_counts": {
-                        "team:drafting": _team_runs(state, "drafting") + 1,
+                        "team:analysis": _team_runs(state, "analysis") + 1,
                     },
                 },
             )
@@ -310,9 +351,10 @@ def _feedback_text(state: dict[str, Any]) -> str:
     return "; ".join(parts)[:2000] or "Assurance requested a revision."
 
 
-def _reset_writer_status(state: dict[str, Any]) -> dict[str, str]:
+def _reset_status(state: dict[str, Any], agents: set[str]) -> dict[str, str]:
+    """Mark the given agents' subtasks pending so a lead re-runs only those."""
     statuses = dict(state.get("subtask_status") or {})
     for subtask in (state.get("plan") or {}).get("subtasks", []):
-        if subtask.get("assigned_agent") == "report_writer":
+        if subtask.get("assigned_agent") in agents:
             statuses[subtask["id"]] = "pending"
     return statuses

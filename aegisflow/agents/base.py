@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 
@@ -11,6 +12,7 @@ from config import Settings
 
 from ..database import Database
 from ..models import AgentStatus, ErrorClass, utcnow_iso
+from ..prompts import prompt_fingerprint
 from ..services.llm_service import (
     LLMError,
     MalformedOutputError,
@@ -19,6 +21,32 @@ from ..services.llm_service import (
 from ..validation import ValidationError
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def _model_fields(settings: Settings, llm: Any = None) -> dict[str, str]:
+    """Identify the model that actually served the call, without exposing secrets.
+
+    Real mode prefers the candidate that answered, so a failover run records the
+    winner rather than whatever was configured first.
+    """
+    provider = getattr(llm, "active_provider", "") or ""
+    model_id = getattr(llm, "active_model", "") or ""
+    if provider:
+        return {"model_backend": provider, "model_id": model_id}
+    if settings.simulated:
+        return {"model_backend": "mock", "model_id": ""}
+    return {"model_backend": settings.provider, "model_id": settings.model}
+
+
+def _usage_fields(llm: Any) -> dict[str, int | None]:
+    """Token counts the provider actually reported; never estimated."""
+    usage = getattr(llm, "last_usage", None)
+    if not isinstance(usage, dict):
+        return {}
+    return {
+        "input_tokens": usage.get("input_tokens"),
+        "output_tokens": usage.get("output_tokens"),
+    }
 
 
 class AgentFailure(RuntimeError):
@@ -44,12 +72,19 @@ def call_agent(
     input_ref: str,
     validator: Callable[[T], None] | None = None,
 ) -> tuple[T, int]:
-    """Invoke the model with bounded retries and record one execution row."""
+    """Invoke the model with bounded retries and record one execution row.
+
+    The row also carries wall-clock latency and any token usage the provider
+    reported. Usage is left NULL when nothing was reported, so an absent metric
+    is never indistinguishable from a measured zero.
+    """
     started = utcnow_iso()
+    started_clock = time.perf_counter()
     retries = 0
     last_error: BaseException | None = None
     for attempt in range(settings.max_retries + 1):
         try:
+            attempt_clock = time.perf_counter()
             result = llm.structured(
                 agent=agent,
                 schema=schema,
@@ -71,7 +106,24 @@ def call_agent(
                 output_ref=f"{schema.__name__} ok",
                 started_at=started,
                 finished_at=utcnow_iso(),
+                latency_ms=int((time.perf_counter() - attempt_clock) * 1000),
+                prompt_version=prompt_fingerprint(system_prompt),
+                **_model_fields(settings, llm),
+                **_usage_fields(llm),
             )
+            attempts = getattr(llm, "last_attempts", None) or []
+            if attempts:
+                skipped = attempts[0]
+                db.add_audit(
+                    task_id,
+                    "provider_fallback",
+                    "system",
+                    None,
+                    f"skipped={skipped.get('provider')}/{skipped.get('model')}; "
+                    f"error={skipped.get('error')}; "
+                    f"served_by={getattr(llm, 'active_provider', '')}/"
+                    f"{getattr(llm, 'active_model', '')}",
+                )
             return result, retries
         except (MalformedOutputError, ValidationError) as exc:
             last_error = exc
@@ -111,6 +163,10 @@ def call_agent(
         output_ref="failed",
         started_at=started,
         finished_at=utcnow_iso(),
+        latency_ms=int((time.perf_counter() - started_clock) * 1000),
+        prompt_version=prompt_fingerprint(system_prompt),
+        **_model_fields(settings, llm),
+        **_usage_fields(llm),
     )
     raise AgentFailure(
         f"{agent} failed after {retries} retry(ies): {type(last_error).__name__}",

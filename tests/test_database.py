@@ -1,6 +1,13 @@
-import pytest
+import sqlite3
+from dataclasses import replace
 
+import pytest
+from pydantic import BaseModel
+
+from aegisflow.agents.base import call_agent
+from aegisflow.database import EXECUTION_METRIC_COLUMNS, Database
 from aegisflow.models import TaskStatus, WorkloadMetric
+from aegisflow.prompts import prompt_fingerprint
 
 
 def test_task_lifecycle(env):
@@ -81,3 +88,138 @@ def test_counts(env):
     task = env.db.create_task("A request with enough characters.", "markdown", True)
     env.db.transition_task(task.id, "planning")
     assert env.db.counts_by_status()["planning"] == 1
+
+
+def test_agent_execution_records_usage(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    env.db.add_agent_execution(
+        task.id,
+        "planner",
+        2,
+        "task-planning",
+        "completed",
+        prompt_version="abc123abc123",
+        model_backend="openrouter",
+        model_id="test/model",
+        input_tokens=120,
+        output_tokens=40,
+        latency_ms=845,
+    )
+    row = env.db.list_agent_executions(task.id)[0]
+    assert row["prompt_version"] == "abc123abc123"
+    assert (row["model_backend"], row["model_id"]) == ("openrouter", "test/model")
+    assert (row["input_tokens"], row["output_tokens"], row["latency_ms"]) == (120, 40, 845)
+
+
+def test_agent_execution_usage_defaults_to_null(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    env.db.add_agent_execution(
+        task.id, "policy_checker", 3, "quality-review", "completed"
+    )
+    row = env.db.list_agent_executions(task.id)[0]
+    assert row["input_tokens"] is None
+    assert row["output_tokens"] is None
+    assert row["latency_ms"] is None
+    assert row["model_backend"] == ""
+
+
+def test_existing_database_gains_usage_columns(tmp_path):
+    """A database created before the usage columns existed is upgraded in place."""
+    path = tmp_path / "legacy.sqlite"
+    conn = sqlite3.connect(path)
+    conn.execute(
+        """CREATE TABLE agent_executions (
+               id TEXT PRIMARY KEY,
+               task_id TEXT NOT NULL,
+               agent TEXT NOT NULL,
+               level INTEGER NOT NULL,
+               skill TEXT NOT NULL,
+               input_ref TEXT NOT NULL DEFAULT '',
+               output_ref TEXT NOT NULL DEFAULT '',
+               status TEXT NOT NULL,
+               retries INTEGER NOT NULL DEFAULT 0,
+               error_class TEXT NOT NULL DEFAULT '',
+               simulated INTEGER NOT NULL DEFAULT 1,
+               started_at TEXT NOT NULL,
+               finished_at TEXT NOT NULL
+           )"""
+    )
+    conn.commit()
+    conn.close()
+
+    db = Database(path)
+    try:
+        columns = {
+            row["name"] for row in db.conn.execute("PRAGMA table_info(agent_executions)")
+        }
+        assert set(EXECUTION_METRIC_COLUMNS) <= columns
+    finally:
+        db.close()
+
+
+class _Answer(BaseModel):
+    text: str
+
+
+class _FakeLLM:
+    def __init__(self, usage=None):
+        self.last_usage = usage
+
+    def structured(self, **_kwargs):
+        return _Answer(text="ok")
+
+
+def _run_agent(env, task_id, llm, settings=None):
+    return call_agent(
+        agent="planner",
+        schema=_Answer,
+        system_prompt="system",
+        payload={"task": "x"},
+        mock_builder=lambda: {},
+        settings=settings or env.settings,
+        llm=llm,
+        db=env.db,
+        task_id=task_id,
+        level=2,
+        skill="task-planning",
+        input_ref="request",
+    )
+
+
+def test_call_agent_records_model_and_usage(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    llm = _FakeLLM({"input_tokens": 90, "output_tokens": 12, "total_tokens": 102})
+
+    result, retries = _run_agent(env, task.id, llm)
+
+    row = env.db.list_agent_executions(task.id)[0]
+    assert result.text == "ok"
+    assert retries == 0
+    assert row["model_backend"] == "mock"
+    assert row["model_id"] == ""
+    assert row["prompt_version"] == prompt_fingerprint("system")
+    assert row["input_tokens"] == 90
+    assert row["output_tokens"] == 12
+    assert row["latency_ms"] is not None
+    assert row["latency_ms"] >= 0
+
+
+def test_call_agent_leaves_usage_null_when_unreported(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+
+    _run_agent(env, task.id, _FakeLLM(None))
+
+    row = env.db.list_agent_executions(task.id)[0]
+    assert row["input_tokens"] is None
+    assert row["output_tokens"] is None
+
+
+def test_call_agent_names_the_real_backend(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    settings = replace(env.settings, mode="real", provider="openai", model="test-model")
+
+    _run_agent(env, task.id, _FakeLLM(None), settings=settings)
+
+    row = env.db.list_agent_executions(task.id)[0]
+    assert row["model_backend"] == "openai"
+    assert row["model_id"] == "test-model"

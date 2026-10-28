@@ -19,6 +19,14 @@ load_dotenv(PROJECT_ROOT / ".env", override=False)
 Mode = Literal["mock", "real"]
 Provider = Literal["openrouter", "gemini", "openai"]
 
+# Prefixes accepted in AEGISFLOW_MODEL for per-entry provider routing.
+PROVIDER_ALIASES = {
+    "openrouter": "openrouter",
+    "gemini": "gemini",
+    "google": "gemini",
+    "openai": "openai",
+}
+
 
 def _env_bool(name: str, default: bool = False) -> bool:
     value = os.getenv(name)
@@ -204,6 +212,28 @@ class Settings:
             return self.openai_api_key
         return ""
 
+    def model_candidates(self) -> tuple[tuple[str, str], ...]:
+        """Ordered ``(provider, model)`` pairs parsed from ``AEGISFLOW_MODEL``.
+
+        Entries are comma separated. A ``provider/model`` entry selects the
+        provider explicitly, which is what allows cross-provider failover; a bare
+        id uses ``self.provider``. An unknown prefix is treated as part of the
+        model id, because provider-native ids contain slashes too
+        (``nvidia/nemotron-3-super-120b-a12b:free``).
+        """
+        entries = [
+            entry.strip() for entry in (self.model or "").split(",") if entry.strip()
+        ]
+        candidates: list[tuple[str, str]] = []
+        for entry in entries:
+            head, separator, tail = entry.partition("/")
+            provider = PROVIDER_ALIASES.get(head.lower())
+            if separator and tail and provider:
+                candidates.append((provider, tail))
+            else:
+                candidates.append((self.provider, entry))
+        return tuple(candidates)
+
     def ensure_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -214,6 +244,10 @@ class Settings:
             "mode": self.mode,
             "provider": self.provider,
             "model": self.model or "(not set)",
+            "model_candidates": [
+                f"{provider}/{model_id}"
+                for provider, model_id in self.model_candidates()
+            ],
             "external_llm_authorized": self.allow_external_llm,
             "api_key_configured": bool(self.api_key_for()),
             "max_file_mb": self.max_file_mb,

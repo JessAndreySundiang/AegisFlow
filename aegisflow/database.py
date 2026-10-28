@@ -83,6 +83,12 @@ CREATE TABLE IF NOT EXISTS agent_executions (
     retries INTEGER NOT NULL DEFAULT 0,
     error_class TEXT NOT NULL DEFAULT '',
     simulated INTEGER NOT NULL DEFAULT 1,
+    prompt_version TEXT NOT NULL DEFAULT '',
+    model_backend TEXT NOT NULL DEFAULT '',
+    model_id TEXT NOT NULL DEFAULT '',
+    input_tokens INTEGER,
+    output_tokens INTEGER,
+    latency_ms INTEGER,
     started_at TEXT NOT NULL,
     finished_at TEXT NOT NULL
 );
@@ -158,6 +164,18 @@ CREATE INDEX IF NOT EXISTS idx_audit_task ON audit_log(task_id);
 CREATE INDEX IF NOT EXISTS idx_evidence_task ON evidence_refs(task_id);
 """
 
+# Usage columns added after the first release. Databases created before they
+# existed are upgraded by ``_ensure_execution_metrics``; the values are optional
+# because providers are not required to report token counts.
+EXECUTION_METRIC_COLUMNS = {
+    "prompt_version": "TEXT NOT NULL DEFAULT ''",
+    "model_backend": "TEXT NOT NULL DEFAULT ''",
+    "model_id": "TEXT NOT NULL DEFAULT ''",
+    "input_tokens": "INTEGER",
+    "output_tokens": "INTEGER",
+    "latency_ms": "INTEGER",
+}
+
 
 class Database:
     def __init__(self, path: str | Path):
@@ -177,6 +195,7 @@ class Database:
         with self._lock, self.conn:
             self.conn.executescript(SCHEMA)
             self._ensure_review_uniqueness()
+            self._ensure_execution_metrics()
 
     def _ensure_review_uniqueness(self) -> None:
         """Add the approval uniqueness index when existing data allows it.
@@ -195,6 +214,22 @@ class Database:
                 "CREATE UNIQUE INDEX IF NOT EXISTS uq_reviews_version_decision "
                 "ON human_reviews(version_id, decision)"
             )
+
+    def _ensure_execution_metrics(self) -> None:
+        """Add the usage columns to a database created before they existed.
+
+        ``CREATE TABLE IF NOT EXISTS`` never alters an existing table, so this
+        migration is explicit and idempotent. Older rows keep empty/NULL metrics
+        rather than receiving an inferred value.
+        """
+        existing = {
+            row["name"] for row in self.conn.execute("PRAGMA table_info(agent_executions)")
+        }
+        for column, declaration in EXECUTION_METRIC_COLUMNS.items():
+            if column not in existing:
+                self.conn.execute(
+                    f"ALTER TABLE agent_executions ADD COLUMN {column} {declaration}"
+                )
 
     def close(self) -> None:
         with self._lock:
@@ -415,14 +450,22 @@ class Database:
         output_ref: str = "",
         started_at: str | None = None,
         finished_at: str | None = None,
+        prompt_version: str = "",
+        model_backend: str = "",
+        model_id: str = "",
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+        latency_ms: int | None = None,
     ) -> str:
         execution_id = str(uuid.uuid4())
         with self._lock, self.conn:
             self.conn.execute(
                 """INSERT INTO agent_executions
                    (id, task_id, agent, level, skill, input_ref, output_ref, status,
-                    retries, error_class, simulated, started_at, finished_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    retries, error_class, simulated, prompt_version, model_backend,
+                    model_id, input_tokens, output_tokens, latency_ms, started_at,
+                    finished_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     execution_id,
                     task_id,
@@ -435,6 +478,12 @@ class Database:
                     retries,
                     error_class,
                     int(simulated),
+                    prompt_version,
+                    model_backend,
+                    model_id,
+                    input_tokens,
+                    output_tokens,
+                    latency_ms,
                     started_at or utcnow_iso(),
                     finished_at or utcnow_iso(),
                 ),

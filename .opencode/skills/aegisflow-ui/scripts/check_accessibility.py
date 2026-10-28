@@ -50,13 +50,31 @@ def open_sidebar(page) -> None:
             return
 
 
+def wait_for_settled(page, timeout: int = 10_000) -> None:
+    """Wait until Streamlit is not mid-rerun.
+
+    While a rerun is in flight Streamlit marks containers ``data-stale`` and
+    fades their contents to partial opacity. Running axe in that window reports
+    contrast failures that do not exist on the finished page, so the audit must
+    wait for the stale markers to clear rather than sleeping a fixed interval.
+    """
+    try:
+        page.wait_for_function(
+            "() => !document.querySelector(\"[data-stale='true']\")",
+            timeout=timeout,
+        )
+    except Exception:
+        pass
+    page.wait_for_timeout(150)
+
+
 def click_nav(page, name: str) -> None:
     """Click a sidebar navigation button by name, ignoring in-page actions."""
     nav = page.locator(
         '[data-testid="stSidebar"] [data-testid="stButton"] button'
     ).filter(has_text=name).first
     nav.evaluate("el => el.click()")
-    page.wait_for_timeout(1200)
+    wait_for_settled(page)
 
 
 def main(argv: list[str]) -> int:
@@ -81,6 +99,7 @@ def main(argv: list[str]) -> int:
             page.goto(url, wait_until="domcontentloaded", timeout=30_000)
             page.wait_for_selector("h1", timeout=30_000)
             page.wait_for_timeout(900)
+            wait_for_settled(page)
             page.add_script_tag(path=str(AXE))
             for name in PAGES:
                 if name != "Dashboard":

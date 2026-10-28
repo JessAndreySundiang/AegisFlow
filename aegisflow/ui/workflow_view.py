@@ -69,6 +69,8 @@ def _details(db, task, state) -> None:
                 [
                     {
                         "Agent": row["agent"],
+                        "Prompt": row.get("prompt_version") or "—",
+                        "Model": row.get("model_backend") or "—",
                         "Skill": row["skill"],
                         "Status": row["status"],
                         "Retries": row["retries"],

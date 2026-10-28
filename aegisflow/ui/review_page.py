@@ -7,6 +7,7 @@ import html
 import streamlit as st
 
 from ..approvals import ApprovalError, record_decision
+from ..metrics import readability
 from ..models import HumanDecision, TaskStatus
 from . import common, components, draft_view, layout
 
@@ -115,6 +116,17 @@ def _history_note(db, task_id: str) -> str:
     return "History: " + " · ".join(labels[-4:])
 
 
+def _readability_chip(payload: dict) -> str:
+    """Local readability estimate for the draft. Never a governance signal."""
+    result = readability(payload["draft"])
+    if result is None:
+        return ""
+    text = f"Readability: {result.label} · {result.score}/100"
+    if result.readable:
+        return components.badge("approved", text=text, tone="active")
+    return components.badge("blocked", text=text, tone="review")
+
+
 def _render_technical(payload: dict, db, task_id: str) -> None:
     with st.expander("Version fingerprint and technical checks"):
         st.text_input(
@@ -124,6 +136,27 @@ def _render_technical(payload: dict, db, task_id: str) -> None:
         )
         st.caption("This fingerprint protects the exact draft you are reviewing.")
         st.caption(f"Revisions used: {payload['revision_count']} / {payload['max_revisions']}")
+        executions = db.list_agent_executions(task_id)
+        if executions:
+            st.dataframe(
+                [
+                    {
+                        "Agent": row["agent"],
+                        "Prompt": row.get("prompt_version") or "—",
+                        "Model": row.get("model_backend") or "—",
+                        "In": row.get("input_tokens"),
+                        "Out": row.get("output_tokens"),
+                        "ms": row.get("latency_ms"),
+                    }
+                    for row in executions
+                ],
+                width="stretch",
+                hide_index=True,
+            )
+            st.caption(
+                "Prompt is a fingerprint of the exact system prompt that produced the "
+                "output. Blank usage means the provider reported none."
+            )
         claims = payload["claims"]
         if claims:
             st.dataframe(
@@ -350,6 +383,15 @@ def render(services) -> None:
     with left:
         with st.container(border=True, key="ag-card-draft"):
             st.markdown('<div class="ag-card-title">Draft (read-only)</div>', unsafe_allow_html=True)
+            chip = _readability_chip(payload)
+            if chip:
+                st.markdown(
+                    f'<div class="ag-check-pills">{chip}</div>', unsafe_allow_html=True
+                )
+                st.caption(
+                    "Estimated locally from the draft text with a syllable heuristic; "
+                    "approximate, and not an approval signal."
+                )
             draft_view.render_draft(payload["draft"], simulated=payload["simulated"])
             st.markdown(
                 '<div class="ag-note">Read-only in this prototype. Editing would create a new '

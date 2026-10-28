@@ -236,3 +236,24 @@ def test_ui_revision_requires_feedback_and_creates_new_version(tmp_path, monkeyp
     assert "Tighten" in reviews[0].feedback
     assert len(db.list_output_versions(task_id)) == 2
     db.close()
+
+
+def test_ui_readability_is_not_rendered_as_a_governance_badge(tmp_path, monkeypatch):
+    """Readability is presentation only and must not borrow the approval badge."""
+    monkeypatch.setenv("AEGISFLOW_DATA_DIR", str(tmp_path / "data"))
+    st.cache_resource.clear()
+    _settings, task_id = _seed_review_task(tmp_path)
+
+    at = AppTest.from_file(str(PROJECT_ROOT / "app.py"), default_timeout=120).run()
+    at.session_state["active_task_id"] = task_id
+    at.session_state["page"] = "Review"
+    at.run()
+    assert not at.exception, [e.message for e in at.exception]
+
+    chips = [block.value for block in at.markdown if "Readability:" in block.value]
+    assert chips, "the review page should show a readability chip"
+    for chip in chips:
+        assert "ag-badge" in chip
+        # A status tone or a glyph would read as approval or blockage.
+        assert "ag-status-" not in chip
+        assert "<svg" not in chip

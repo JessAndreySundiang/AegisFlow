@@ -75,3 +75,13 @@ def badge(status: Any, text: str | None = None, tone: str | None = None) -> str:
 
 def render_badge(status: Any, text: str | None = None) -> None:
     st.markdown(badge(status, text), unsafe_allow_html=True)
+
+
+def metric_chip(text: str) -> str:
+    """A neutral chip for descriptive metadata, with no status affordance.
+
+    Status badges carry an icon and a colour that mean something in the approval
+    vocabulary. Metrics such as readability are presentation only, so they get a
+    plain pill that borrows neither: no glyph, no ``ag-status-*`` tone.
+    """
+    return f'<span class="ag-badge">{html.escape(text)}</span>'

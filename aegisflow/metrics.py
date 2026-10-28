@@ -133,10 +133,6 @@ class Readability:
     def score(self) -> int:
         return int(round(self.flesch))
 
-    @property
-    def readable(self) -> bool:
-        return self.label == "plain"
-
 
 def _syllables(word: str) -> int:
     """Count vowel groups, with a silent-``e`` adjustment.

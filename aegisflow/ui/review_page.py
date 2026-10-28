@@ -117,14 +117,18 @@ def _history_note(db, task_id: str) -> str:
 
 
 def _readability_chip(payload: dict) -> str:
-    """Local readability estimate for the draft. Never a governance signal."""
+    """Local readability estimate for the draft. Never a governance signal.
+
+    Rendered as a neutral chip rather than a status badge: a check mark or an
+    alert glyph here would read as approval or blockage, and the band name in
+    the text already carries the distinction.
+    """
     result = readability(payload["draft"])
     if result is None:
         return ""
-    text = f"Readability: {result.label} · {result.score}/100"
-    if result.readable:
-        return components.badge("approved", text=text, tone="active")
-    return components.badge("blocked", text=text, tone="review")
+    return components.metric_chip(
+        f"Readability: {result.label} · {result.score}/100"
+    )
 
 
 def _render_technical(payload: dict, db, task_id: str) -> None:

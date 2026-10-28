@@ -4,10 +4,11 @@ from dataclasses import replace
 import pytest
 from pydantic import BaseModel
 
-from aegisflow.agents.base import call_agent
+from aegisflow.agents.base import AgentFailure, call_agent
 from aegisflow.database import EXECUTION_METRIC_COLUMNS, Database
 from aegisflow.models import TaskStatus, WorkloadMetric
 from aegisflow.prompts import prompt_fingerprint
+from aegisflow.services.llm_service import TransientProviderError
 
 
 def test_task_lifecycle(env):
@@ -223,3 +224,64 @@ def test_call_agent_names_the_real_backend(env):
     row = env.db.list_agent_executions(task.id)[0]
     assert row["model_backend"] == "openai"
     assert row["model_id"] == "test-model"
+
+
+class _Clock:
+    """Deterministic ``perf_counter``: each call returns the next value."""
+
+    def __init__(self, *values: float):
+        self._values = list(values)
+        self._index = 0
+
+    def perf_counter(self) -> float:
+        value = self._values[min(self._index, len(self._values) - 1)]
+        self._index += 1
+        return value
+
+
+class _FlakyLLM:
+    """Fails transiently a fixed number of times, then answers."""
+
+    def __init__(self, failures: int):
+        self.remaining = failures
+        self.last_usage = None
+        self.calls = 0
+
+    def structured(self, **_kwargs):
+        self.calls += 1
+        if self.remaining:
+            self.remaining -= 1
+            raise TransientProviderError("Simulated provider timeout.")
+        return _Answer(text="ok")
+
+
+def test_latency_covers_the_whole_call_not_just_the_last_attempt(env, monkeypatch):
+    """A retried call must report the full duration, not the final attempt."""
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    llm = _FlakyLLM(failures=1)
+    monkeypatch.setattr("aegisflow.agents.base.time", _Clock(100.0, 102.5))
+
+    result, retries = _run_agent(
+        env, task.id, llm, settings=replace(env.settings, max_retries=1)
+    )
+
+    row = env.db.list_agent_executions(task.id)[0]
+    assert result.text == "ok"
+    assert retries == 1
+    assert llm.calls == 2
+    assert row["latency_ms"] == 2500
+
+
+def test_failed_call_reports_the_same_whole_call_latency(env, monkeypatch):
+    """Success and failure rows must be measured on the same clock span."""
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    llm = _FlakyLLM(failures=99)
+    monkeypatch.setattr("aegisflow.agents.base.time", _Clock(10.0, 17.0))
+
+    with pytest.raises(AgentFailure):
+        _run_agent(env, task.id, llm, settings=replace(env.settings, max_retries=1))
+
+    row = env.db.list_agent_executions(task.id)[0]
+    assert llm.calls == 2
+    assert row["status"] == "failed"
+    assert row["latency_ms"] == 7000

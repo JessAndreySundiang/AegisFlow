@@ -166,7 +166,9 @@ CREATE INDEX IF NOT EXISTS idx_evidence_task ON evidence_refs(task_id);
 
 # Usage columns added after the first release. Databases created before they
 # existed are upgraded by ``_ensure_execution_metrics``; the values are optional
-# because providers are not required to report token counts.
+# because providers are not required to report token counts. ``latency_ms`` is
+# the whole call, retries and backoff included, for both successful and failed
+# rows.
 EXECUTION_METRIC_COLUMNS = {
     "prompt_version": "TEXT NOT NULL DEFAULT ''",
     "model_backend": "TEXT NOT NULL DEFAULT ''",

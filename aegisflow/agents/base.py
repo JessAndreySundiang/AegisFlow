@@ -74,9 +74,14 @@ def call_agent(
 ) -> tuple[T, int]:
     """Invoke the model with bounded retries and record one execution row.
 
-    The row also carries wall-clock latency and any token usage the provider
-    reported. Usage is left NULL when nothing was reported, so an absent metric
-    is never indistinguishable from a measured zero.
+    ``latency_ms`` is the wall clock of the whole call: every attempt plus any
+    backoff between them, measured the same way whether the call succeeded or
+    failed. It deliberately excludes nothing, so averaging the column across
+    rows does not mix per-attempt and per-call durations.
+
+    Token usage is recorded when the provider reports it and left NULL
+    otherwise, so an absent metric is never indistinguishable from a measured
+    zero.
     """
     started = utcnow_iso()
     started_clock = time.perf_counter()
@@ -84,7 +89,6 @@ def call_agent(
     last_error: BaseException | None = None
     for attempt in range(settings.max_retries + 1):
         try:
-            attempt_clock = time.perf_counter()
             result = llm.structured(
                 agent=agent,
                 schema=schema,
@@ -106,7 +110,7 @@ def call_agent(
                 output_ref=f"{schema.__name__} ok",
                 started_at=started,
                 finished_at=utcnow_iso(),
-                latency_ms=int((time.perf_counter() - attempt_clock) * 1000),
+                latency_ms=int((time.perf_counter() - started_clock) * 1000),
                 prompt_version=prompt_fingerprint(system_prompt),
                 **_model_fields(settings, llm),
                 **_usage_fields(llm),

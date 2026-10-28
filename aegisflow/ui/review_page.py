@@ -155,7 +155,8 @@ def _render_technical(payload: dict, db, task_id: str) -> None:
             )
             st.caption(
                 "Prompt is a fingerprint of the exact system prompt that produced the "
-                "output. Blank usage means the provider reported none."
+                "output. Blank usage means the provider reported none. ms is the whole "
+                "call, retries and backoff included."
             )
         claims = payload["claims"]
         if claims:

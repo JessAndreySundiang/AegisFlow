@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
@@ -16,6 +17,22 @@ from config import Settings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = PROJECT_ROOT / "sample_data"
+
+
+@pytest.fixture(autouse=True)
+def _force_mock_mode(monkeypatch):
+    """Keep this suite hermetic: never inherit a real-mode local ``.env``.
+
+    The app builds its stack through ``Settings.from_env()``, so without pinning
+    these values a developer with real mode configured would see every page
+    assertion fail for reasons unrelated to the UI.
+    """
+    monkeypatch.setenv("AEGISFLOW_MODE", "mock")
+    monkeypatch.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "false")
+    monkeypatch.setenv("AEGISFLOW_MODEL", "")
+    st.cache_resource.clear()
+    yield
+    st.cache_resource.clear()
 
 
 def _seed_review_task(tmp_path: Path):

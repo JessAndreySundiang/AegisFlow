@@ -49,6 +49,34 @@ def _usage_fields(llm: Any) -> dict[str, int | None]:
     }
 
 
+def _record_provider_audit(
+    db: Database, task_id: str, llm: Any, *, served: bool
+) -> None:
+    """Record every candidate that was tried and did not answer.
+
+    ``last_attempts`` holds one entry per unusable candidate, in order. Recording
+    only the first understated the trail: three skipped candidates looked like
+    one, and a call where nothing answered recorded nothing at all.
+    """
+    attempts = getattr(llm, "last_attempts", None) or []
+    if not attempts:
+        return
+    tried = "; ".join(
+        f"{attempt.get('provider')}/{attempt.get('model')} ({attempt.get('error')})"
+        for attempt in attempts
+    )
+    if served:
+        event_type = "provider_fallback"
+        outcome = (
+            f"served_by={getattr(llm, 'active_provider', '')}/"
+            f"{getattr(llm, 'active_model', '')}"
+        )
+    else:
+        event_type = "provider_candidates_exhausted"
+        outcome = "no candidate answered"
+    db.add_audit(task_id, event_type, "system", None, f"tried={tried}; {outcome}")
+
+
 class AgentFailure(RuntimeError):
     def __init__(self, message: str, error_class: str, retries: int):
         super().__init__(message)
@@ -115,19 +143,7 @@ def call_agent(
                 **_model_fields(settings, llm),
                 **_usage_fields(llm),
             )
-            attempts = getattr(llm, "last_attempts", None) or []
-            if attempts:
-                skipped = attempts[0]
-                db.add_audit(
-                    task_id,
-                    "provider_fallback",
-                    "system",
-                    None,
-                    f"skipped={skipped.get('provider')}/{skipped.get('model')}; "
-                    f"error={skipped.get('error')}; "
-                    f"served_by={getattr(llm, 'active_provider', '')}/"
-                    f"{getattr(llm, 'active_model', '')}",
-                )
+            _record_provider_audit(db, task_id, llm, served=True)
             return result, retries
         except (MalformedOutputError, ValidationError) as exc:
             last_error = exc
@@ -172,6 +188,7 @@ def call_agent(
         **_model_fields(settings, llm),
         **_usage_fields(llm),
     )
+    _record_provider_audit(db, task_id, llm, served=False)
     raise AgentFailure(
         f"{agent} failed after {retries} retry(ies): {type(last_error).__name__}",
         error_class=error_class,

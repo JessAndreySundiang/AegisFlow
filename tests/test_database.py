@@ -8,7 +8,7 @@ from aegisflow.agents.base import AgentFailure, call_agent
 from aegisflow.database import EXECUTION_METRIC_COLUMNS, Database
 from aegisflow.models import TaskStatus, WorkloadMetric
 from aegisflow.prompts import prompt_fingerprint
-from aegisflow.services.llm_service import TransientProviderError
+from aegisflow.services.llm_service import LLMError, TransientProviderError
 
 
 def test_task_lifecycle(env):
@@ -285,3 +285,77 @@ def test_failed_call_reports_the_same_whole_call_latency(env, monkeypatch):
     assert llm.calls == 2
     assert row["status"] == "failed"
     assert row["latency_ms"] == 7000
+
+
+_ATTEMPTS = [
+    {"provider": "openrouter", "model": "a", "error": "LLMError", "transient": False},
+    {
+        "provider": "openrouter",
+        "model": "b",
+        "error": "TransientProviderError",
+        "transient": True,
+    },
+    {"provider": "gemini", "model": "c", "error": "LLMError", "transient": False},
+]
+
+
+class _FallbackLLM:
+    """Answers, but reports earlier candidates it never got past."""
+
+    def __init__(self, attempts):
+        self.last_attempts = attempts
+        self.active_provider = "openrouter"
+        self.active_model = "d"
+        self.last_usage = None
+
+    def structured(self, **_kwargs):
+        return _Answer(text="ok")
+
+
+class _ExhaustedLLM:
+    """Every candidate failed, so nothing answered."""
+
+    def __init__(self, attempts):
+        self.last_attempts = attempts
+        self.active_provider = ""
+        self.active_model = ""
+        self.last_usage = None
+
+    def structured(self, **_kwargs):
+        raise LLMError("All model candidates failed.")
+
+
+def test_fallback_audit_records_every_skipped_candidate(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+
+    _run_agent(env, task.id, _FallbackLLM(_ATTEMPTS))
+
+    events = [
+        event
+        for event in env.db.list_audit(task.id)
+        if event.event_type == "provider_fallback"
+    ]
+    assert len(events) == 1
+    detail = events[0].detail
+    assert "tried=openrouter/a (LLMError)" in detail
+    assert "openrouter/b (TransientProviderError)" in detail
+    assert "gemini/c (LLMError)" in detail
+    assert "served_by=openrouter/d" in detail
+
+
+def test_exhausted_candidates_are_recorded_when_nothing_answers(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+
+    with pytest.raises(AgentFailure):
+        _run_agent(env, task.id, _ExhaustedLLM(_ATTEMPTS))
+
+    events = [
+        event
+        for event in env.db.list_audit(task.id)
+        if event.event_type == "provider_candidates_exhausted"
+    ]
+    assert len(events) == 1
+    detail = events[0].detail
+    assert "openrouter/b (TransientProviderError)" in detail
+    assert "gemini/c (LLMError)" in detail
+    assert "no candidate answered" in detail

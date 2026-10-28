@@ -50,14 +50,22 @@ def open_sidebar(page) -> None:
             return
 
 
-def wait_for_settled(page, timeout: int = 10_000) -> None:
+def wait_for_settled(page, timeout: int = 10_000, floor_ms: int = 1200) -> None:
     """Wait until Streamlit is not mid-rerun.
 
     While a rerun is in flight Streamlit marks containers ``data-stale`` and
-    fades their contents to partial opacity. Running axe in that window reports
-    contrast failures that do not exist on the finished page, so the audit must
-    wait for the stale markers to clear rather than sleeping a fixed interval.
+    fades their contents to 0.33 opacity. Running axe in that window reports
+    contrast failures that do not exist on the finished page: the light palette
+    tokens render as approximately #b0b2b9 and #c9ced6 on white, which is
+    2.11:1 and 1.58:1.
+
+    Waiting only for the markers to clear is not sufficient. Immediately after a
+    click the rerun has not started yet, so no marker exists, the check passes at
+    once, and the audit lands in the fade that begins a moment later. Wait a
+    minimum interval first so the rerun has certainly begun, then wait out any
+    rerun slow enough to outlast that interval.
     """
+    page.wait_for_timeout(floor_ms)
     try:
         page.wait_for_function(
             "() => !document.querySelector(\"[data-stale='true']\")",

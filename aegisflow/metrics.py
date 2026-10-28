@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from .database import Database
@@ -95,3 +96,99 @@ def save_workload_metric(
     )
     db.save_workload(metric)
     return metric
+
+
+# ------------------------------------------------------------------ readability
+# Presentation heuristic only. It never feeds a governance decision.
+
+_FENCE = re.compile(r"```.*?```", re.DOTALL)
+_INLINE_CODE = re.compile(r"`[^`]*`")
+_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+_CITATION = re.compile(r"\[(?:S\d+|UNVERIFIED[^\]]*)\]", re.IGNORECASE)
+_MARKUP = re.compile(r"[*_#>|]+")
+_WORD = re.compile(r"[A-Za-z][A-Za-z'-]*")
+_SENTENCE_END = re.compile(r"[.!?]+")
+_VOWELS = frozenset("aeiouy")
+
+# Flesch bands are a presentation convention chosen for a busy-manager reader,
+# not the original 0-100 score-range vocabulary.
+READABILITY_BANDS: tuple[tuple[float, str], ...] = (
+    (60.0, "plain"),
+    (50.0, "fairly difficult"),
+    (30.0, "difficult"),
+    (0.0, "very difficult"),
+)
+
+
+@dataclass(frozen=True)
+class Readability:
+    """A local readability estimate. Never an LLM judgement."""
+
+    flesch: float
+    label: str
+    words: int
+    sentences: int
+
+    @property
+    def score(self) -> int:
+        return int(round(self.flesch))
+
+    @property
+    def readable(self) -> bool:
+        return self.label == "plain"
+
+
+def _syllables(word: str) -> int:
+    """Count vowel groups, with a silent-``e`` adjustment.
+
+    Deliberately simple: the result is an approximation and is labelled as one
+    wherever it is shown.
+    """
+    lowered = word.lower()
+    count = 0
+    previous_vowel = False
+    for character in lowered:
+        is_vowel = character in _VOWELS
+        if is_vowel and not previous_vowel:
+            count += 1
+        previous_vowel = is_vowel
+    if lowered.endswith("e") and not lowered.endswith(("le", "ee")) and count > 1:
+        count -= 1
+    return max(1, count)
+
+
+def plain_text(draft: str) -> str:
+    """Strip Markdown furniture and citation markers before counting words."""
+    text = _FENCE.sub(" ", draft or "")
+    text = _INLINE_CODE.sub(" ", text)
+    text = _LINK.sub(r"\1", text)
+    text = _CITATION.sub(" ", text)
+    return _MARKUP.sub(" ", text)
+
+
+def readability(draft: str) -> Readability | None:
+    """Estimate Flesch reading ease with a local syllable heuristic.
+
+    Deterministic and offline: the same text always yields the same number. The
+    score describes the draft only — it says nothing about whether the content
+    is accurate, complete, or approved.
+    """
+    text = plain_text(draft)
+    words = _WORD.findall(text)
+    if not words:
+        return None
+    sentences = max(1, len(_SENTENCE_END.findall(text)))
+    syllables = sum(_syllables(word) for word in words)
+    score = (
+        206.835
+        - (1.015 * (len(words) / sentences))
+        - (84.6 * (syllables / len(words)))
+    )
+    score = max(0.0, min(121.0, score))
+    label = next(name for threshold, name in READABILITY_BANDS if score >= threshold)
+    return Readability(
+        flesch=round(score, 1),
+        label=label,
+        words=len(words),
+        sentences=sentences,
+    )

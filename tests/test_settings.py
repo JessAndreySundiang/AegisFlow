@@ -14,6 +14,7 @@ ENV_KEYS = (
     "AEGISFLOW_MODEL",
     "AEGISFLOW_ALLOW_EXTERNAL_LLM",
     "AEGISFLOW_DATA_DIR",
+    "AEGISFLOW_LLM_TIMEOUT",
     "OPENROUTER_API_KEY",
     "GOOGLE_API_KEY",
     "GEMINI_API_KEY",
@@ -198,4 +199,17 @@ def test_invalid_numeric_setting_is_rejected(clean_env):
     clean_env.setenv("AEGISFLOW_MAX_RETRIES", "many")
 
     with pytest.raises(ValueError, match="AEGISFLOW_MAX_RETRIES"):
+        Settings.from_env()
+
+
+def test_llm_timeout_is_configurable(clean_env):
+    clean_env.setenv("AEGISFLOW_LLM_TIMEOUT", "12.5")
+
+    assert Settings.from_env().llm_timeout_s == 12.5
+
+
+def test_non_positive_llm_timeout_is_rejected(clean_env):
+    clean_env.setenv("AEGISFLOW_LLM_TIMEOUT", "0")
+
+    with pytest.raises(ValueError, match="AEGISFLOW_LLM_TIMEOUT"):
         Settings.from_env()

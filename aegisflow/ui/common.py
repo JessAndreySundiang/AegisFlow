@@ -82,6 +82,26 @@ def short_text(text: str, limit: int = 90) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
+def provider_summary(settings: Settings) -> str:
+    """Primary candidate plus a count, never the whole comma separated chain.
+
+    The banner is a mode announcement, not a config dump: the chain can be five
+    entries long and changes whenever failover is retuned.
+    """
+    try:
+        chain = settings.model_candidates()
+    except ValueError:
+        chain = ()
+    if not chain:
+        return f"{settings.provider} / {settings.model or '(not set)'}"
+    provider, model = chain[0]
+    extra = len(chain) - 1
+    if not extra:
+        return f"{provider} / {model}"
+    plural = "s" if extra != 1 else ""
+    return f"{provider} / {model} (+{extra} fallback{plural})"
+
+
 def render_simulated_banner(settings: Settings) -> None:
     if settings.simulated:
         st.markdown(
@@ -92,7 +112,7 @@ def render_simulated_banner(settings: Settings) -> None:
         )
     else:
         st.info(
-            f"**REAL MODE** — {settings.provider} / {settings.model}. "
+            f"**REAL MODE** — {provider_summary(settings)}. "
             "Uploaded document text may be sent to the configured provider.",
             icon=":material/dns:",
         )

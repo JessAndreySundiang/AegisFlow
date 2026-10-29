@@ -389,6 +389,52 @@ def test_every_execution_row_records_the_run_mode(env, make_task, run_task, samp
     assert not disagree, f"rows contradict the simulated run: {disagree}"
 
 
+def test_a_requested_revision_clears_the_previous_version_pointer(
+    env, make_task, run_task, sample_txt
+):
+    """A revision must not pair a version pointer with an empty draft."""
+    task, files, docs, _ = make_task(
+        request=SUMMARY_REQUEST, files=[("project_notes.txt", sample_txt)]
+    )
+    first = run_task(task, files, docs).interrupt_payload
+    assert first is not None
+
+    feedback = "Tighten the summary."
+    record_decision(
+        env.db,
+        task.id,
+        first["version_id"],
+        "request_revision",
+        "Dr. Reviewer",
+        feedback=feedback,
+        max_revisions=2,
+    )
+    env.workflow.resume(
+        task.id,
+        {
+            "decision": "request_revision",
+            "reviewer": "Dr. Reviewer",
+            "feedback": feedback,
+            "revision_target": "drafting",
+        },
+    )
+
+    config = {
+        "configurable": {"thread_id": task.id},
+        "recursion_limit": env.settings.recursion_limit,
+    }
+    mid_revision = []
+    for snapshot in env.workflow.graph.get_state_history(config):
+        values = snapshot.values or {}
+        if values.get("revision_count", 0) >= 1 and not values.get("draft"):
+            mid_revision.append(values)
+
+    assert mid_revision, "the revision pass should produce a state with no draft"
+    for values in mid_revision:
+        assert values.get("current_version_id") == ""
+        assert values.get("current_content_hash") == ""
+
+
 # --------------------------------------------------------------------------
 # TC-08  no readable input blocks instead of inventing content
 # --------------------------------------------------------------------------

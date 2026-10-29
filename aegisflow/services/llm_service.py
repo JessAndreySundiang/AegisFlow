@@ -335,7 +335,7 @@ class RealLLMService:
                 api_key=api_key,
                 base_url="https://openrouter.ai/api/v1",
                 temperature=0,
-                timeout=60,
+                timeout=self.settings.llm_timeout_s,
                 max_retries=0,
                 default_headers={
                     "HTTP-Referer": "http://localhost:8501",
@@ -349,7 +349,7 @@ class RealLLMService:
                 model=model_id,
                 api_key=api_key,
                 temperature=0,
-                timeout=60,
+                timeout=self.settings.llm_timeout_s,
                 max_retries=0,
             )
         elif provider == "gemini":
@@ -359,7 +359,7 @@ class RealLLMService:
                 model=model_id,
                 api_key=api_key,
                 temperature=0,
-                timeout=60,
+                timeout=self.settings.llm_timeout_s,
                 max_retries=0,
             )
         else:  # pragma: no cover - config validation prevents this
@@ -439,6 +439,10 @@ class RealLLMService:
             ),
         ]
         last_error: Exception | None = None
+        # One budget for the whole candidate, not per attempt: a provider that
+        # ignores its own timeout would otherwise be retried max_retries times,
+        # turning a 60 s stall into three minutes before failover begins.
+        deadline = time.monotonic() + self.settings.llm_timeout_s
         for attempt in range(self.settings.max_retries + 1):
             try:
                 if runner is not None:
@@ -449,8 +453,12 @@ class RealLLMService:
             except Exception as exc:
                 if _is_transient(exc):
                     last_error = exc
-                    if attempt < self.settings.max_retries:
-                        time.sleep(0.5 * (2**attempt))
+                    backoff = 0.5 * (2**attempt)
+                    if (
+                        attempt < self.settings.max_retries
+                        and time.monotonic() + backoff < deadline
+                    ):
+                        time.sleep(backoff)
                         continue
                     raise TransientProviderError(str(exc)) from exc
                 if _is_auth_failure(exc):

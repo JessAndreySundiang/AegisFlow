@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from itertools import count
 from typing import Any
 
 import pytest
@@ -254,3 +255,28 @@ def test_numeric_codes_are_matched_only_as_whole_tokens():
 def test_message_fallback_still_catches_unnamed_sdk_errors():
     assert llm_service._is_transient(RuntimeError("Rate limit exceeded, retry later"))
     assert llm_service._is_auth_failure(RuntimeError("Unauthorized"))
+
+
+def test_candidate_deadline_stops_retrying_a_slow_provider(monkeypatch):
+    """One timeout is the budget for the candidate, not one per attempt."""
+    client = _Client(error=RuntimeError("429 rate limit exceeded"))
+    service = _service("openrouter/a", {("openrouter", "a"): client}, max_retries=3)
+    clock = count(start=0.0, step=120.0)
+    monkeypatch.setattr(llm_service.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(llm_service.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(TransientProviderError):
+        service.structured("planner", Answer, "system", {})
+
+    assert client.calls == 1
+
+
+def test_fast_transient_failure_still_retries_inside_the_budget(monkeypatch):
+    client = _Client(error=RuntimeError("429 rate limit exceeded"))
+    service = _service("openrouter/a", {("openrouter", "a"): client}, max_retries=2)
+    monkeypatch.setattr(llm_service.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(TransientProviderError):
+        service.structured("planner", Answer, "system", {})
+
+    assert client.calls == 3

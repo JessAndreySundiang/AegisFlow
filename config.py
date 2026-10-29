@@ -74,6 +74,7 @@ class Settings:
     data_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "data")
     max_file_mb: float = 10.0
     max_retries: int = 2
+    llm_timeout_s: float = 60.0
     max_revisions: int = 2
     max_delegation_depth: int = 3
     recursion_limit: int = 80
@@ -129,6 +130,7 @@ class Settings:
             data_dir=data_dir,
             max_file_mb=_env_float("AEGISFLOW_MAX_FILE_MB", 10.0),
             max_retries=_env_int("AEGISFLOW_MAX_RETRIES", 2),
+            llm_timeout_s=_env_float("AEGISFLOW_LLM_TIMEOUT", 60.0),
             max_revisions=_env_int("AEGISFLOW_MAX_REVISIONS", 2),
             max_delegation_depth=_env_int("AEGISFLOW_MAX_DELEGATION_DEPTH", 3),
             recursion_limit=_env_int("AEGISFLOW_RECURSION_LIMIT", 80),
@@ -144,6 +146,8 @@ class Settings:
             raise ValueError("AEGISFLOW_MAX_FILE_MB must be positive")
         if self.max_retries < 0:
             raise ValueError("AEGISFLOW_MAX_RETRIES cannot be negative")
+        if self.llm_timeout_s <= 0:
+            raise ValueError("AEGISFLOW_LLM_TIMEOUT must be positive")
         if self.max_revisions < 0:
             raise ValueError("AEGISFLOW_MAX_REVISIONS cannot be negative")
         if self.max_delegation_depth < 1:
@@ -226,6 +230,7 @@ class Settings:
             data_dir=self.data_dir,
             max_file_mb=self.max_file_mb,
             max_retries=self.max_retries,
+            llm_timeout_s=self.llm_timeout_s,
             max_revisions=self.max_revisions,
             max_delegation_depth=self.max_delegation_depth,
             recursion_limit=self.recursion_limit,

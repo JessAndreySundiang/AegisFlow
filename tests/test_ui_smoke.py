@@ -13,6 +13,7 @@ from aegisflow.document_processing import document_to_state, save_and_extract
 from aegisflow.models import TaskStatus
 from aegisflow.services.workflow_service import WorkflowService
 from aegisflow.skills_loader import load_skills
+from aegisflow.ui.common import provider_summary
 from config import Settings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -257,3 +258,18 @@ def test_ui_readability_is_not_rendered_as_a_governance_badge(tmp_path, monkeypa
         # A status tone or a glyph would read as approval or blockage.
         assert "ag-status-" not in chip
         assert "<svg" not in chip
+
+
+def test_provider_summary_names_the_primary_and_counts_fallbacks():
+    settings = Settings(
+        provider="gemini",
+        model="gemini:gemini-3.5-flash,openrouter:a,openrouter:b",
+    )
+
+    assert provider_summary(settings) == "gemini / gemini-3.5-flash (+2 fallbacks)"
+
+
+def test_provider_summary_is_plain_with_a_single_candidate():
+    settings = Settings(provider="gemini", model="gemini:gemini-3.5-flash")
+
+    assert provider_summary(settings) == "gemini / gemini-3.5-flash"

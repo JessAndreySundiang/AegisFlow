@@ -15,6 +15,12 @@ PAGES = ("Dashboard", "New Task", "Workflow", "Review", "History")
 AXE = Path(__file__).resolve().parents[1] / "assets" / "axe.min.js"
 OUTPUT = Path("ui_checks") / "axe"
 BLOCKING = {"critical", "serious"}
+
+
+class StalePageError(RuntimeError):
+    """The page was still mid-rerun, so an audit would read faded colours."""
+
+
 SCRIPT = """
 async () => {
   const result = await axe.run(document, {
@@ -50,6 +56,23 @@ def open_sidebar(page) -> None:
             return
 
 
+def assert_settled(page) -> None:
+    """Refuse to audit a page Streamlit is still fading down.
+
+    The stale markers are the only in-band signal that the DOM is mid-rerun. An
+    audit that samples it reports contrast ratios that do not exist on the
+    finished page, which is worse than no audit: it looks like evidence.
+    """
+    stale = page.evaluate(
+        "() => document.querySelectorAll(\"[data-stale='true']\").length"
+    )
+    if stale:
+        raise StalePageError(
+            f"{stale} container(s) still marked data-stale; "
+            "axe would sample faded content"
+        )
+
+
 def wait_for_settled(page, timeout: int = 10_000, floor_ms: int = 1200) -> None:
     """Wait until Streamlit is not mid-rerun.
 
@@ -74,6 +97,7 @@ def wait_for_settled(page, timeout: int = 10_000, floor_ms: int = 1200) -> None:
     except Exception:
         pass
     page.wait_for_timeout(150)
+    assert_settled(page)
 
 
 def click_nav(page, name: str) -> None:
@@ -110,8 +134,14 @@ def main(argv: list[str]) -> int:
             wait_for_settled(page)
             page.add_script_tag(path=str(AXE))
             for name in PAGES:
-                if name != "Dashboard":
-                    click_nav(page, name)
+                try:
+                    if name != "Dashboard":
+                        click_nav(page, name)
+                    assert_settled(page)
+                except StalePageError as exc:
+                    print(f"FAIL page={name} scheme={scheme} :: stale DOM ({exc})")
+                    failed += 1
+                    continue
                 violations = page.evaluate(SCRIPT)
                 blocking = [v for v in violations if v["impact"] in BLOCKING]
                 failed += len(blocking)

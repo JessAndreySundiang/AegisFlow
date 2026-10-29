@@ -45,6 +45,11 @@ jobs:
       - name: Tests with coverage
         run: python -m pytest --cov=aegisflow --cov-report=term-missing --cov-fail-under=75
 
+      # The failover chain is the most intricate logic here; hold it on its own
+      # floor so refactors elsewhere cannot hide a drop behind the global gate.
+      - name: Failover coverage floor
+        run: python -m coverage report --include="aegisflow/services/llm_service.py" --fail-under=70
+
       - name: Theme tokens
         run: python .opencode/skills/aegisflow-ui/scripts/check_theme.py
 

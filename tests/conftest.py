@@ -16,6 +16,20 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = PROJECT_ROOT / "sample_data"
 
 
+@pytest.fixture(autouse=True)
+def hermetic_env(monkeypatch):
+    """Keep the suite independent of the developer's .env and their real keys.
+
+    Without this, a local .env with mode=real changes what Settings.from_env()
+    returns and the suite passes or fails according to the machine it runs on.
+    Tests that need real-mode settings build them explicitly.
+    """
+    monkeypatch.setenv("AEGISFLOW_MODE", "mock")
+    monkeypatch.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "false")
+    monkeypatch.setenv("AEGISFLOW_MODEL", "")
+    monkeypatch.setenv("AEGISFLOW_LLM_TIMEOUT", "60")
+
+
 @pytest.fixture
 def env(tmp_path):
     settings = Settings(

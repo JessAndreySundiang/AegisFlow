@@ -101,20 +101,24 @@ Real mode requires **all four** conditions:
 1. `AEGISFLOW_MODE=real`
 2. `AEGISFLOW_ALLOW_EXTERNAL_LLM=true`
 3. a key for the selected provider
-4. a non-empty `AEGISFLOW_MODEL` containing **one** model id
+4. a non-empty `AEGISFLOW_MODEL` holding at least one model id
 
 ```dotenv
 AEGISFLOW_MODE=real
-AEGISFLOW_PROVIDER=openrouter
+AEGISFLOW_PROVIDER=gemini
 AEGISFLOW_ALLOW_EXTERNAL_LLM=true
-AEGISFLOW_MODEL=the-exact-model-id-from-the-provider
+AEGISFLOW_MODEL=gemini:gemini-3.5-flash,openrouter:openai/gpt-4o
 
-OPENROUTER_API_KEY=your-key-here
-# or
 GOOGLE_API_KEY=your-key-here
+# or
+OPENROUTER_API_KEY=your-key-here
 # or
 OPENAI_API_KEY=your-key-here
 ```
+
+`AEGISFLOW_MODEL` is a comma separated list in failover order: the first entry is the primary, and the next one is tried when a model is missing, rate limited, or otherwise fails. Gemini is the default provider, so a bare model id is sent to it. Write `provider:model` to name a provider per entry.
+
+A slash only counts as a provider prefix when it names the configured provider. Writing `openai/gpt-4o` while the provider is `gemini` is rejected at startup with both readings spelled out, because the same string also reads as an OpenRouter model id; real mode falls back to mock rather than guessing.
 
 Provider values: `openrouter`, `gemini`, or `openai`.
 

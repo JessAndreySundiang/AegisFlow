@@ -65,7 +65,7 @@ class Settings:
     """
 
     mode: Mode = "mock"
-    provider: Provider = "openrouter"
+    provider: Provider = "gemini"
     model: str = ""
     openrouter_api_key: str = ""
     google_api_key: str = ""
@@ -111,7 +111,7 @@ class Settings:
         if mode not in {"mock", "real"}:
             raise ValueError("AEGISFLOW_MODE must be 'mock' or 'real'")
 
-        provider = os.getenv("AEGISFLOW_PROVIDER", "openrouter").strip().lower()
+        provider = os.getenv("AEGISFLOW_PROVIDER", "gemini").strip().lower()
         if provider not in {"openrouter", "gemini", "openai"}:
             raise ValueError("AEGISFLOW_PROVIDER must be openrouter, gemini, or openai")
 
@@ -150,6 +150,15 @@ class Settings:
             raise ValueError("AEGISFLOW_MAX_DELEGATION_DEPTH must be at least 1")
         if self.recursion_limit < 10:
             raise ValueError("AEGISFLOW_RECURSION_LIMIT must be at least 10")
+
+        # An ambiguous model list must never be resolved by guessing: give up on
+        # real mode so no request can reach a provider the operator did not name.
+        try:
+            self.model_candidates()
+        except ValueError as exc:
+            warnings.append(f"{exc} Falling back to mock mode.")
+            fallback_reason = str(exc)
+            mode = "mock"
 
         if mode == "real":
             key = self.api_key_for(self.provider)
@@ -215,23 +224,45 @@ class Settings:
     def model_candidates(self) -> tuple[tuple[str, str], ...]:
         """Ordered ``(provider, model)`` pairs parsed from ``AEGISFLOW_MODEL``.
 
-        Entries are comma separated. A ``provider/model`` entry selects the
-        provider explicitly, which is what allows cross-provider failover; a bare
-        id uses ``self.provider``. An unknown prefix is treated as part of the
-        model id, because provider-native ids contain slashes too
-        (``nvidia/nemotron-3-super-120b-a12b:free``).
+        Entries are comma separated and the order is the failover order, so the
+        first entry is the primary. ``provider:model`` selects a provider
+        explicitly and always wins: ``openrouter:openai/gpt-4o`` sends
+        ``openai/gpt-4o`` through OpenRouter. A bare id uses ``self.provider``.
+
+        ``provider/model`` is still accepted when it names the configured
+        provider (``openrouter/nvidia/x:free`` under ``provider=openrouter``),
+        but a *different* provider behind a slash raises instead of silently
+        rerouting. ``openai/gpt-4o`` reads just as plausibly as native OpenAI
+        and as an OpenRouter model id, and guessing is how a request reaches a
+        vendor the operator did not choose.
         """
         entries = [
             entry.strip() for entry in (self.model or "").split(",") if entry.strip()
         ]
         candidates: list[tuple[str, str]] = []
         for entry in entries:
-            head, separator, tail = entry.partition("/")
+            head, separator, tail = entry.partition(":")
             provider = PROVIDER_ALIASES.get(head.lower())
             if separator and tail and provider:
                 candidates.append((provider, tail))
-            else:
-                candidates.append((self.provider, entry))
+                continue
+
+            head, separator, tail = entry.partition("/")
+            provider = PROVIDER_ALIASES.get(head.lower())
+            if separator and tail and provider:
+                if provider != self.provider:
+                    raise ValueError(
+                        f"AEGISFLOW_MODEL entry {entry!r} is ambiguous: {head!r} "
+                        f"is a provider prefix, so it routes to {provider!r}, not "
+                        f"to the configured {self.provider!r}. Write "
+                        f"{provider}:{tail} to use the {provider} provider, or "
+                        f"{self.provider}:{entry} to pass {tail!r} to "
+                        f"{self.provider} as a model id."
+                    )
+                candidates.append((provider, tail))
+                continue
+
+            candidates.append((self.provider, entry))
         return tuple(candidates)
 
     def ensure_directories(self) -> None:
@@ -240,14 +271,18 @@ class Settings:
 
     def describe(self) -> dict[str, object]:
         """Safe, secret-free description for the UI and audit log."""
+        try:
+            candidates = [
+                f"{provider}:{model_id}"
+                for provider, model_id in self.model_candidates()
+            ]
+        except ValueError:
+            candidates = ["(invalid AEGISFLOW_MODEL, see the fallback reason)"]
         return {
             "mode": self.mode,
             "provider": self.provider,
             "model": self.model or "(not set)",
-            "model_candidates": [
-                f"{provider}/{model_id}"
-                for provider, model_id in self.model_candidates()
-            ],
+            "model_candidates": candidates,
             "external_llm_authorized": self.allow_external_llm,
             "api_key_configured": bool(self.api_key_for()),
             "max_file_mb": self.max_file_mb,

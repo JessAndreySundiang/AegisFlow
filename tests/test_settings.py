@@ -37,6 +37,34 @@ def test_defaults_to_mock_mode(clean_env):
     assert any("SIMULATED MODE" in warning for warning in settings.warnings)
 
 
+def test_default_provider_is_gemini(clean_env):
+    """Gemini is the primary: a bare model id is sent there, not to OpenRouter."""
+    clean_env.setenv("AEGISFLOW_MODEL", "gemini-3.8-flash")
+
+    settings = Settings.from_env()
+
+    assert settings.provider == "gemini"
+    assert settings.model_candidates() == (("gemini", "gemini-3.8-flash"),)
+
+
+def test_cross_provider_slash_falls_back_to_mock(clean_env):
+    """An ambiguous id must never be resolved by guessing at the provider."""
+    clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
+    clean_env.setenv("AEGISFLOW_MODEL", "openai/gpt-4o")
+    clean_env.setenv("GOOGLE_API_KEY", "not-a-real-key")
+    clean_env.setenv("OPENAI_API_KEY", "not-a-real-key")
+
+    settings = Settings.from_env()
+
+    assert settings.mode == "mock"
+    assert settings.fallback_reason is not None
+    assert "ambiguous" in settings.fallback_reason
+    assert settings.describe()["model_candidates"] == [
+        "(invalid AEGISFLOW_MODEL, see the fallback reason)"
+    ]
+
+
 def test_real_mode_without_authorization_falls_back(clean_env):
     clean_env.setenv("AEGISFLOW_MODE", "real")
     clean_env.setenv("AEGISFLOW_MODEL", "test-model")
@@ -50,6 +78,7 @@ def test_real_mode_without_authorization_falls_back(clean_env):
 
 def test_real_mode_without_key_falls_back(clean_env):
     clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_PROVIDER", "openrouter")
     clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
     clean_env.setenv("AEGISFLOW_MODEL", "test-model")
 
@@ -61,6 +90,7 @@ def test_real_mode_without_key_falls_back(clean_env):
 
 def test_real_mode_without_model_falls_back(clean_env):
     clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_PROVIDER", "openrouter")
     clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
     clean_env.setenv("OPENROUTER_API_KEY", "not-a-real-key")
 
@@ -72,6 +102,7 @@ def test_real_mode_without_model_falls_back(clean_env):
 
 def test_fully_configured_real_mode_stays_real(clean_env):
     clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_PROVIDER", "openrouter")
     clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
     clean_env.setenv("AEGISFLOW_MODEL", "test-model")
     clean_env.setenv("OPENROUTER_API_KEY", "not-a-real-key")
@@ -99,6 +130,7 @@ def test_gemini_key_alias_is_accepted(clean_env):
 def test_describe_never_exposes_the_key(clean_env):
     secret = "sk-super-secret-value-do-not-print"
     clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_PROVIDER", "openrouter")
     clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
     clean_env.setenv("AEGISFLOW_MODEL", "test-model")
     clean_env.setenv("OPENROUTER_API_KEY", secret)

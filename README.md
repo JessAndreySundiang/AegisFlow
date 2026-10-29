@@ -110,18 +110,20 @@ Real mode fails safe: if authorization, key, or model is missing, startup falls 
 
 ```dotenv
 AEGISFLOW_MODE=mock
-AEGISFLOW_PROVIDER=openrouter
+AEGISFLOW_PROVIDER=gemini
 
 # Real mode only (all four conditions are required)
 AEGISFLOW_MODE=real
 AEGISFLOW_ALLOW_EXTERNAL_LLM=true
-AEGISFLOW_MODEL=your-model-id
-OPENROUTER_API_KEY=...
-
-# Optional Gemini / OpenAI
+AEGISFLOW_MODEL=gemini:gemini-3.5-flash,openrouter:openai/gpt-4o
 GOOGLE_API_KEY=...
+
+# Keys for the other providers
+OPENROUTER_API_KEY=...
 OPENAI_API_KEY=...
 ```
+
+`AEGISFLOW_MODEL` is a comma separated list in failover order, so the first entry is the primary and later ones are tried when it is missing or fails. Gemini is the default provider, so a bare model id goes to it. Name a provider per entry with `provider:model`; a cross-provider slash such as `openai/gpt-4o` is rejected rather than guessed at, because it reads equally as native OpenAI and as an OpenRouter id.
 
 `Settings.describe()` and the UI sidebar never print secret values.
 

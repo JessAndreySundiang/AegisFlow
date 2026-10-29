@@ -64,8 +64,8 @@ def _service(
 
 def test_model_candidates_parse_provider_prefixes():
     settings = _settings(
-        "google/gemini-3.8-flash, nvidia/x:free ,openrouter/nvidia/y:free,"
-        " ,openai/gpt-test"
+        "gemini:gemini-3.8-flash, nvidia/x:free ,openrouter/nvidia/y:free,"
+        " ,openai:gpt-test"
     )
 
     assert settings.model_candidates() == (
@@ -74,6 +74,39 @@ def test_model_candidates_parse_provider_prefixes():
         ("openrouter", "nvidia/y:free"),
         ("openai", "gpt-test"),
     )
+
+
+def test_explicit_prefix_routes_an_ambiguous_id_to_the_named_provider():
+    settings = Settings(
+        provider="gemini",
+        model="gemini:gemini-3.8-flash,openrouter:openai/gpt-4o",
+    )
+
+    assert settings.model_candidates() == (
+        ("gemini", "gemini-3.8-flash"),
+        ("openrouter", "openai/gpt-4o"),
+    )
+
+
+def test_cross_provider_slash_is_rejected_instead_of_guessed():
+    """B4: 'openai/gpt-4o' must not silently mean the native OpenAI provider."""
+    settings = Settings(
+        mode="real",
+        provider="gemini",
+        model="openai/gpt-4o",
+        google_api_key="gm-test",
+        openai_api_key="oa-test",
+        allow_external_llm=True,
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        settings.model_candidates()
+
+    message = str(excinfo.value)
+    assert "ambiguous" in message
+    # Both readings are spelled out, so the fix needs no documentation lookup.
+    assert "openai:gpt-4o" in message
+    assert "gemini:openai/gpt-4o" in message
 
 
 def test_missing_model_fails_over_to_the_next_candidate():
@@ -142,7 +175,7 @@ def test_malformed_output_is_not_masked_by_failover():
 def test_candidate_without_a_key_is_skipped():
     working = _Client(content='{"text": "second"}')
     service = _service(
-        "gemini/x,openrouter/b",
+        "gemini:x,openrouter:b",
         {("openrouter", "b"): working},
         google_api_key="",
     )

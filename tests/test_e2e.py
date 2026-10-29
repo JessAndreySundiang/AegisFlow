@@ -369,6 +369,26 @@ def test_tc07_simulated_labels_flow_through_review_and_export(
     assert "Simulated: yes" in text
 
 
+def test_every_execution_row_records_the_run_mode(env, make_task, run_task, sample_txt):
+    """GR-08 provenance: a mock run must not contain a non-simulated row.
+
+    The policy checker used to write a hardcoded ``False`` while every other
+    agent used ``settings.simulated``, so a mock run produced a row claiming a
+    real execution.
+    """
+    task, files, docs, _ = make_task(
+        request=SUMMARY_REQUEST, files=[("project_notes.txt", sample_txt)]
+    )
+    run_task(task, files, docs)
+
+    rows = env.db.list_agent_executions(task.id)
+    assert {row["agent"] for row in rows} >= {"policy_checker"}
+    disagree = [
+        (row["agent"], row["simulated"]) for row in rows if row["simulated"] != 1
+    ]
+    assert not disagree, f"rows contradict the simulated run: {disagree}"
+
+
 # --------------------------------------------------------------------------
 # TC-08  no readable input blocks instead of inventing content
 # --------------------------------------------------------------------------

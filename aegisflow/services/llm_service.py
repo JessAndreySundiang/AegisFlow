@@ -63,10 +63,41 @@ def _message_text(message: BaseMessage) -> str:
     return str(content)
 
 
-_TRANSIENT_TOKENS = ("timeout", "timed out", "rate limit", "429", "503", "502")
+# Exception class names that carry a meaning we can trust without importing the
+# provider SDKs. Types are checked before message text, because a bare number
+# such as "403" also occurs in request ids, model names, and file paths.
+_TRANSIENT_TYPES = frozenset(
+    {
+        "RateLimitError",
+        "TooManyRequests",
+        "APITimeoutError",
+        "APIConnectionError",
+        "TimeoutException",
+        "TimeoutError",
+        "ConnectionError",
+        "ConnectError",
+        "InternalServerError",
+        "ServiceUnavailable",
+        "ResourceExhausted",
+        "DeadlineExceeded",
+    }
+)
+_AUTH_TYPES = frozenset(
+    {
+        "AuthenticationError",
+        "PermissionDeniedError",
+        "PermissionDenied",
+        "Unauthenticated",
+        "InvalidAPIKeyError",
+    }
+)
+
+# Status codes count only as whole tokens, so "req_40391" or "model-v403" is not
+# mistaken for an HTTP 403.
+_TRANSIENT_CODES = re.compile(r"\b(429|502|503)\b")
+_AUTH_CODES = re.compile(r"\b(401|403)\b")
+_TRANSIENT_TOKENS = ("timeout", "timed out", "rate limit")
 _AUTH_TOKENS = (
-    "401",
-    "403",
     "unauthorized",
     "invalid api key",
     "invalid_api_key",
@@ -74,16 +105,38 @@ _AUTH_TOKENS = (
 )
 
 
+def _type_names(exc: BaseException) -> set[str]:
+    return {cls.__name__ for cls in type(exc).__mro__}
+
+
 def _is_transient(exc: BaseException) -> bool:
-    """Classify a provider failure as retryable without inspecting the provider SDK."""
+    """Classify a provider failure as retryable.
+
+    The exception type is authoritative; message text is only consulted when the
+    type says nothing, so an unrelated number in the text cannot reclassify it.
+    """
+    names = _type_names(exc)
+    if names & _TRANSIENT_TYPES:
+        return True
+    if names & _AUTH_TYPES:
+        return False
     message = str(exc).lower()
-    return any(token in message for token in _TRANSIENT_TOKENS)
+    return bool(_TRANSIENT_CODES.search(message)) or any(
+        token in message for token in _TRANSIENT_TOKENS
+    )
 
 
 def _is_auth_failure(exc: BaseException) -> bool:
     """Authentication failures are not fixed by trying a different model."""
+    names = _type_names(exc)
+    if names & _AUTH_TYPES:
+        return True
+    if names & _TRANSIENT_TYPES:
+        return False
     message = str(exc).lower()
-    return any(token in message for token in _AUTH_TOKENS)
+    return bool(_AUTH_CODES.search(message)) or any(
+        token in message for token in _AUTH_TOKENS
+    )
 
 
 def _usage_from_message(message: Any) -> dict[str, int] | None:

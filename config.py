@@ -161,20 +161,12 @@ class Settings:
             mode = "mock"
 
         if mode == "real":
-            key = self.api_key_for(self.provider)
             if not self.allow_external_llm:
                 warnings.append(
                     "Real mode requested but AEGISFLOW_ALLOW_EXTERNAL_LLM is not true. "
                     "Falling back to mock mode so documents are not sent externally."
                 )
                 fallback_reason = "External LLM use was not authorized."
-                mode = "mock"
-            elif not key:
-                warnings.append(
-                    f"Real mode requested but no API key is configured for {self.provider}. "
-                    "Falling back to mock mode."
-                )
-                fallback_reason = f"Missing API key for {self.provider}."
                 mode = "mock"
             elif not self.model:
                 warnings.append(
@@ -183,6 +175,39 @@ class Settings:
                 )
                 fallback_reason = "AEGISFLOW_MODEL is empty."
                 mode = "mock"
+            else:
+                candidates = self.model_candidates()
+                usable = [
+                    (provider, model_id)
+                    for provider, model_id in candidates
+                    if self.api_key_for(provider)
+                ]
+                if not usable:
+                    providers = sorted({provider for provider, _ in candidates})
+                    if providers == [self.provider]:
+                        fallback_reason = f"Missing API key for {self.provider}."
+                    else:
+                        fallback_reason = (
+                            "Missing API key for every candidate provider: "
+                            + ", ".join(providers)
+                            + "."
+                        )
+                    warnings.append(
+                        "Real mode requested but no candidate provider has an API "
+                        f"key ({', '.join(providers)}). Falling back to mock mode."
+                    )
+                    mode = "mock"
+                else:
+                    keyless = [
+                        f"{provider}:{model_id}"
+                        for provider, model_id in candidates
+                        if not self.api_key_for(provider)
+                    ]
+                    if keyless:
+                        warnings.append(
+                            "Real mode: these candidates have no API key and will "
+                            f"be skipped at call time: {', '.join(keyless)}."
+                        )
 
         if mode == "mock":
             warnings.append(
@@ -272,19 +297,23 @@ class Settings:
     def describe(self) -> dict[str, object]:
         """Safe, secret-free description for the UI and audit log."""
         try:
-            candidates = [
-                f"{provider}:{model_id}"
-                for provider, model_id in self.model_candidates()
-            ]
+            parsed = self.model_candidates()
         except ValueError:
+            parsed = ()
             candidates = ["(invalid AEGISFLOW_MODEL, see the fallback reason)"]
+        else:
+            candidates = [f"{provider}:{model_id}" for provider, model_id in parsed]
         return {
             "mode": self.mode,
             "provider": self.provider,
             "model": self.model or "(not set)",
             "model_candidates": candidates,
             "external_llm_authorized": self.allow_external_llm,
-            "api_key_configured": bool(self.api_key_for()),
+            # True when at least one candidate can authenticate, which is what
+            # real mode actually depends on now that the model is a chain.
+            "api_key_configured": any(
+                self.api_key_for(provider) for provider, _ in parsed
+            ),
             "max_file_mb": self.max_file_mb,
             "max_retries": self.max_retries,
             "max_revisions": self.max_revisions,

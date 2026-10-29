@@ -23,12 +23,13 @@ def build_assurance_team(
     def policy_checker_node(state: dict[str, Any]) -> dict[str, Any]:
         documents = (state.get("documents") or {}).values()
         source_text = "\n".join(doc.get("text", "") for doc in documents)
+        simulated = bool(state.get("simulated", settings.simulated))
         report: PolicyReport = run_policy_checks(
             draft=state.get("draft", ""),
             plan=state.get("plan"),
             claims=state.get("claims", []),
             source_text=source_text,
-            simulated=bool(state.get("simulated", settings.simulated)),
+            simulated=simulated,
         )
         db.add_agent_execution(
             task_id=state["task_id"],
@@ -37,7 +38,7 @@ def build_assurance_team(
             skill="quality-review",
             status=AgentStatus.COMPLETED.value,
             retries=0,
-            simulated=False,
+            simulated=simulated,
             input_ref=f"draft_chars={len(state.get('draft', ''))}",
             output_ref=f"passed={report.passed}; findings={len(report.findings)}",
         )

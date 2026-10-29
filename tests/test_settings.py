@@ -65,6 +65,51 @@ def test_cross_provider_slash_falls_back_to_mock(clean_env):
     ]
 
 
+def test_chain_with_a_key_only_on_a_fallback_stays_real(clean_env):
+    """A usable candidate anywhere in the chain is enough to run for real."""
+    clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_PROVIDER", "gemini")
+    clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
+    clean_env.setenv("AEGISFLOW_MODEL", "gemini:gemini-3.5-flash,openrouter:x")
+    clean_env.setenv("OPENROUTER_API_KEY", "not-a-real-key")
+
+    settings = Settings.from_env()
+
+    assert settings.mode == "real"
+    assert settings.fallback_reason is None
+    assert any("gemini:gemini-3.5-flash" in note for note in settings.warnings)
+
+
+def test_chain_with_no_candidate_key_falls_back(clean_env):
+    clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_PROVIDER", "gemini")
+    clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
+    clean_env.setenv("AEGISFLOW_MODEL", "gemini:gemini-3.5-flash,openrouter:x")
+
+    settings = Settings.from_env()
+
+    assert settings.mode == "mock"
+    assert settings.fallback_reason == (
+        "Missing API key for every candidate provider: gemini, openrouter."
+    )
+
+
+def test_describe_reports_a_key_for_the_chain_not_just_the_provider(clean_env):
+    clean_env.setenv("AEGISFLOW_MODE", "real")
+    clean_env.setenv("AEGISFLOW_PROVIDER", "gemini")
+    clean_env.setenv("AEGISFLOW_ALLOW_EXTERNAL_LLM", "true")
+    clean_env.setenv("AEGISFLOW_MODEL", "gemini:gemini-3.5-flash,openrouter:x")
+    clean_env.setenv("OPENROUTER_API_KEY", "not-a-real-key")
+
+    described = Settings.from_env().describe()
+
+    assert described["api_key_configured"] is True
+    assert described["model_candidates"] == [
+        "gemini:gemini-3.5-flash",
+        "openrouter:x",
+    ]
+
+
 def test_real_mode_without_authorization_falls_back(clean_env):
     clean_env.setenv("AEGISFLOW_MODE", "real")
     clean_env.setenv("AEGISFLOW_MODEL", "test-model")

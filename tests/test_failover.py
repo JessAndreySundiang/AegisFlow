@@ -228,3 +228,29 @@ def test_model_fields_falls_back_to_mock_without_an_active_candidate():
     settings = Settings(mode="mock").validate()
 
     assert _model_fields(settings, None) == {"model_backend": "mock", "model_id": ""}
+
+
+def test_classification_prefers_the_exception_type_over_message_text():
+    class RateLimitError(RuntimeError):
+        pass
+
+    class AuthenticationError(RuntimeError):
+        pass
+
+    assert llm_service._is_transient(RateLimitError("upstream refused"))
+    assert not llm_service._is_auth_failure(RateLimitError("upstream refused"))
+    assert llm_service._is_auth_failure(AuthenticationError("no"))
+    assert not llm_service._is_transient(AuthenticationError("no"))
+
+
+def test_numeric_codes_are_matched_only_as_whole_tokens():
+    # A request id or model name must not read as an HTTP status code.
+    assert not llm_service._is_auth_failure(RuntimeError("request req_40391 failed"))
+    assert not llm_service._is_transient(RuntimeError("model-v4290 not found"))
+    assert llm_service._is_auth_failure(RuntimeError("HTTP 403 Forbidden"))
+    assert llm_service._is_transient(RuntimeError("503 Service Unavailable"))
+
+
+def test_message_fallback_still_catches_unnamed_sdk_errors():
+    assert llm_service._is_transient(RuntimeError("Rate limit exceeded, retry later"))
+    assert llm_service._is_auth_failure(RuntimeError("Unauthorized"))

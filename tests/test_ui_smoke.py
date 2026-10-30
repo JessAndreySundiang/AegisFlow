@@ -260,6 +260,26 @@ def test_ui_readability_is_not_rendered_as_a_governance_badge(tmp_path, monkeypa
         assert "<svg" not in chip
 
 
+def test_dashboard_shows_measured_token_totals(tmp_path, monkeypatch):
+    """Token cost is summarised on the Dashboard, not only on the Review table."""
+    monkeypatch.setenv("AEGISFLOW_DATA_DIR", str(tmp_path / "data"))
+    st.cache_resource.clear()
+    settings, task_id = _seed_review_task(tmp_path)
+
+    db = Database(settings.app_db_path)
+    db.add_agent_execution(
+        task_id, "planner", 2, "task-planning", "completed", input_tokens=120, output_tokens=40
+    )
+    assert db.task_usage(task_id)["calls"] >= 1
+    db.close()
+
+    at = AppTest.from_file(str(PROJECT_ROOT / "app.py"), default_timeout=120).run()
+    assert not at.exception, [e.message for e in at.exception]
+    rendered = "\n".join(block.value for block in at.markdown)
+    assert "Tokens (measured" in rendered
+    assert " in / " in rendered and " out" in rendered
+
+
 def test_provider_summary_names_the_primary_and_counts_fallbacks():
     settings = Settings(
         provider="gemini",

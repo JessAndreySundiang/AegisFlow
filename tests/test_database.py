@@ -112,6 +112,32 @@ def test_agent_execution_records_usage(env):
     assert (row["input_tokens"], row["output_tokens"], row["latency_ms"]) == (120, 40, 845)
 
 
+def test_task_usage_sums_only_reported_executions(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    other = env.db.create_task("Another request with enough characters.", "markdown", True)
+    env.db.add_agent_execution(
+        task.id, "planner", 2, "task-planning", "completed", input_tokens=120, output_tokens=40
+    )
+    env.db.add_agent_execution(
+        task.id, "writer", 3, "report-writing", "completed", input_tokens=80, output_tokens=60
+    )
+    env.db.add_agent_execution(task.id, "policy_checker", 3, "quality-review", "completed")
+    env.db.add_agent_execution(
+        other.id, "planner", 2, "task-planning", "completed", input_tokens=999, output_tokens=999
+    )
+    assert env.db.task_usage(task.id) == {
+        "calls": 2,
+        "input_tokens": 200,
+        "output_tokens": 100,
+    }
+    assert env.db.task_usage(other.id)["input_tokens"] == 999
+
+
+def test_task_usage_of_a_task_without_executions_is_zero(env):
+    task = env.db.create_task("A request with enough characters.", "markdown", True)
+    assert env.db.task_usage(task.id) == {"calls": 0, "input_tokens": 0, "output_tokens": 0}
+
+
 def test_agent_execution_usage_defaults_to_null(env):
     task = env.db.create_task("A request with enough characters.", "markdown", True)
     env.db.add_agent_execution(

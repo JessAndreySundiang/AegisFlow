@@ -115,12 +115,25 @@ def render(services) -> None:
             )
             manual = f"{latest.manual_minutes:g} min" if latest and latest.manual_minutes is not None else "—"
             ai_time = common.format_minutes(latest.elapsed_seconds) if latest else "—"
+            usage = (
+                db.task_usage(latest.id)
+                if latest
+                else {"calls": 0, "input_tokens": 0, "output_tokens": 0}
+            )
+            if usage["calls"]:
+                tokens = f'{usage["input_tokens"]:,} in / {usage["output_tokens"]:,} out'
+                token_label = f'Tokens (measured, {usage["calls"]} calls)'
+            else:
+                tokens = "not reported"
+                token_label = "Tokens (measured)"
             st.markdown(
                 f'<div class="ag-stat-label">Manual time (your estimate)</div>'
                 f'<div class="ag-stat-value">{manual}</div>'
                 f'<div class="ag-stat-label">AI-assisted time (measured)</div>'
                 f'<div class="ag-stat-value">{ai_time}</div>'
-                '<div class="ag-note">Measures time only, not quality.</div>',
+                f'<div class="ag-stat-label">{token_label}</div>'
+                f'<div class="ag-stat-value">{tokens}</div>'
+                '<div class="ag-note">Measures time and tokens only, not quality.</div>',
                 unsafe_allow_html=True,
             )
 

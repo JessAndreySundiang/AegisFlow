@@ -4,7 +4,7 @@ theme: default
 paginate: true
 size: 16:9
 header: "AegisFlow · SIP10 Final Project"
-footer: "Working prototype · mock mode verified · real mode executed once · 153 tests passing"
+footer: "Working prototype · mock mode verified · real mode executed once · 156 tests passing"
 style: |
   :root {
     --ink: #0f172a;
@@ -66,7 +66,7 @@ style: |
 ## A governed hierarchical multi-agent system for document tasks — with human-in-the-loop approval
 
 **SIP10 Final Project** · 26 October 2026  
-Working prototype · mock mode verified · real mode executed once · **153 tests passing**
+Working prototype · mock mode verified · real mode executed once · **156 tests passing**
 
 <!--
 SPEAKER NOTES
@@ -124,7 +124,7 @@ Give one concrete example for each. Then transition: a prompt is advisory; a con
 - **6** SKILL.md packages
 - **8** governance rules
 - **9** risks
-- **153** tests (15 E2E + 132 unit/integration + 6 UI)
+- **156** tests (15 E2E + 134 unit/integration + 7 UI)
 - Hash-bound approval
 - GOVERN / MAP / MEASURE / MANAGE
 
@@ -409,11 +409,11 @@ The UI is backed by the project-scoped aegisflow-ui skill; technical tables and 
 
 ---
 
-# Tests: 153 passed
+# Tests: 156 passed
 
 <div class="three">
 <div class="card ok">
-<h3>132</h3>
+<h3>134</h3>
 <p>Unit + integration<br><span class="small">models, DB, approvals, extraction, skills, governance, metrics, failover</span></p>
 </div>
 <div class="card ok">
@@ -421,14 +421,14 @@ The UI is backed by the project-scoped aegisflow-ui skill; technical tables and 
 <p>End-to-end<br><span class="small">TC-01 to TC-13 on the real graph and SQLite</span></p>
 </div>
 <div class="card ok">
-<h3>6</h3>
+<h3>7</h3>
 <p>Streamlit UI<br><span class="small">all pages + approval, rejection, revision flows</span></p>
 </div>
 </div>
 
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
-153 passed in 13.12s
+156 passed in 21.69s
 ```
 
 <p class="small">Proven: approval, tamper detection, injection, routing, escalation, audit redaction.<br>
@@ -480,7 +480,7 @@ Planner → Orchestrator → 3 executors → Reviewer → Human → Output
 
 - 6 agents · 6 skills · 8 governance rules · 9 risks
 - Approval bound to the exact version and SHA-256 hash
-- 153 automated tests · real mode executed once, not benchmarked
+- 156 automated tests · real mode executed once, not benchmarked
 - Real-provider mode implemented but **not verified**
 
 ### Thank you — questions?

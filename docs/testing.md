@@ -1,9 +1,9 @@
 # Test Plan and Results
 
 **System:** AegisFlow v0.6.0
-**Date:** 29 October 2026
+**Date:** 30 October 2026
 **Environment:** Windows, Python 3.13.7, project `.venv`, pytest 9.1.1
-**Result:** **153 passed, 0 failed** (`python -m pytest tests\`). Pytest also reports four `ResourceWarning: unclosed database` notices from the Streamlit test harness; see §6.
+**Result:** **156 passed, 0 failed** (`python -m pytest tests\`). Some runs also print `ResourceWarning: unclosed database` notices from the Streamlit test harness; see section 6.
 
 ---
 
@@ -90,7 +90,7 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 |---|---:|---|
 | `test_models.py` | 7 | Plan id/dependency validation, blocked-plan rule, claim text, stable hash, status values |
 | `test_settings.py` | 16 | Mock default, real-mode fallback paths, chain-wide key validation, Gemini key alias, secret-free `describe()`, invalid mode/number/timeout |
-| `test_database.py` | 17 | Task lifecycle, invalid transitions, version numbering/hash, cascade delete, audit redaction, workload, counts, provider-fallback audit |
+| `test_database.py` | 19 | Task lifecycle, invalid transitions, version numbering/hash, cascade delete, audit redaction, workload, counts, provider-fallback audit, per-task token totals |
 | `test_approvals.py` | 8 | Approve/finalize, agent refusal, duplicate, stale version, hash mismatch, content tamper, reject terminal, revision feedback/limit |
 | `test_approval_race.py` | 3 | Two concurrent approvals record exactly one; unique index exists and rejects direct duplicate inserts |
 | `test_document_processing.py` | 15 | Extensions, TXT/PDF/DOCX extraction, empty, corrupted, encrypted, unsupported, size limit, DOCX bomb, PDF page cap, PDF signature, injection scan, delimiters, safe filenames, deletion |
@@ -103,19 +103,19 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 | `test_governance.py` | 9 | Eight unique rules, good draft, missing reference/section, injection, secret, external action, simulated warning, invented email |
 | `test_metrics.py` | 3 | Groundedness, citation coverage, time reduction (including negative) |
 | `test_e2e.py` | 15 | TC-01 to TC-13 plus the run-mode provenance invariant and revision state hygiene |
-| `test_ui_smoke.py` | 6 | Streamlit pages + approval flow + rejection confirmation + revision flow + readability chip |
-| **Total** | **153** | |
+| `test_ui_smoke.py` | 7 | Streamlit pages + approval flow + rejection confirmation + revision flow + readability chip + dashboard token totals |
+| **Total** | **156** | |
 
 ---
 
 ## 6. Recorded result
 
 ```text
-$ .\.venv\Scripts\python.exe -m pytest tests\ -q
-153 passed, 4 warnings in 13.12s
+$ .\.venv\Scripts\python.exe -m pytest tests\
+156 passed in 21.69s
 ```
 
-The four warnings are `ResourceWarning: unclosed database` notices raised when a SQLite connection cached for Streamlit is garbage-collected at the end of an `AppTest` case. They are test-harness hygiene, not failures; the suite is 153 passed, 0 failed.
+`ResourceWarning` notices are timing-dependent: a run prints them only when the cached SQLite handles are garbage-collected before the session ends. The coverage run below printed four; the plain run above printed none. They are test-harness hygiene either way, not failures; the suite is 156 passed, 0 failed.
 
 A separate Streamlit server smoke test was run:
 
@@ -163,8 +163,8 @@ $ .\.venv\Scripts\python.exe -m ruff check .
 All checks passed!
 
 $ .\.venv\Scripts\python.exe -m pytest --cov=aegisflow --cov-report=term-missing
-TOTAL                                     3776    599   1180    262    80%
-153 passed, 4 warnings in 13.12s
+TOTAL                                     3787    600   1184    263    80%
+156 passed, 4 warnings in 35.05s
 ```
 
 `pyproject.toml` configures lint, pytest, and branch coverage; `requirements-dev.txt` pins `ruff`, `pytest-cov`, and `playwright`. CI (`.github/workflows/ci.yml`) runs lint, tests with a 75% coverage gate and a 70% floor for `aegisflow/services/llm_service.py`, and theme/contrast on Windows and Ubuntu, plus a seeded browser job on Ubuntu that installs Chromium, sweeps all five pages, runs axe, and uploads `ui-evidence`. Settings fallback is covered by `test_settings.py`: missing authorization or model, or no key on any candidate, must fall back to mock, and `describe()` must never expose a key.

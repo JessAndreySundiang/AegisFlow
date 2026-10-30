@@ -6,7 +6,7 @@
 **Date:** 26 October 2026  
 **Prepared by:** SIP10 project author  
 **Environment:** Windows, Python 3.13.7, project `.venv`  
-**Recorded test result:** **153 passed, 0 failed** (`python -m pytest tests\`)
+**Recorded test result:** **156 passed, 0 failed** (`python -m pytest tests\`)
 
 ---
 
@@ -16,7 +16,7 @@ AegisFlow is a working prototype of a governed, hierarchical multi-agent documen
 
 The prototype is designed around a distinction between **generation** and **authority**. Language models generate and transform text. Deterministic code owns routing, permissions, retry limits, approval validation, and export checks. The human owns final approval.
 
-Mock mode is implemented and verified with 153 automated tests, including 15 end-to-end scenarios and six headless Streamlit UI flows. A project-scoped `aegisflow-ui` skill documents the tokenized, responsive interface. Real-provider adapters for OpenRouter, Gemini, and OpenAI are implemented, and real mode has since been executed once end to end: one task on 29 October 2026 served by `gemini:gemini-3.5-flash` with no fallback, 5 LLM calls, and 7,401 input / 8,668 output tokens. That is a single recorded run, not a benchmark. It demonstrates that the adapters, chain, approval gate, finalize, and export paths work against a live provider; it does not establish output quality, error rates, or latency under load.
+Mock mode is implemented and verified with 156 automated tests, including 15 end-to-end scenarios and seven headless Streamlit UI flows. A project-scoped `aegisflow-ui` skill documents the tokenized, responsive interface. Real-provider adapters for OpenRouter, Gemini, and OpenAI are implemented, and real mode has since been executed once end to end: one task on 29 October 2026 served by `gemini:gemini-3.5-flash` with no fallback, 5 LLM calls, and 7,401 input / 8,668 output tokens. That is a single recorded run, not a benchmark. It demonstrates that the adapters, chain, approval gate, finalize, and export paths work against a live provider; it does not establish output quality, error rates, or latency under load.
 
 ---
 
@@ -81,7 +81,7 @@ The assignment images specify:
 | `SKILL.md` packages | 3 | **6** |
 | Governance rules | 5 | **8** |
 | Risks | 5 | **9** |
-| Test cases | 5 | **15 E2E + 132 unit/integration + 6 UI = 153** |
+| Test cases | 5 | **15 E2E + 134 unit/integration + 7 UI = 156** |
 | NIST functions | 4 | **4** |
 | UI pages | not specified | **5** |
 | UI design system skills | not specified | **1** (`aegisflow-ui`) |
@@ -241,7 +241,7 @@ Each rule has an owner, enforcement point, evidence, failure behavior, residual 
 
 - **GOVERN:** eight rules with named owners, a third-party provider gate, approval accountability, and documented policies.
 - **MAP:** intended use, single-user context, non-goals, data sources, affected parties, and nine risks.
-- **MEASURE:** groundedness, citation coverage, approval outcome, revisions, retries, elapsed time, and 153 tests. No benchmark numbers are invented.
+- **MEASURE:** groundedness, citation coverage, approval outcome, revisions, retries, elapsed time, and 156 tests. No benchmark numbers are invented.
 - **MANAGE:** block/escalate paths, bounded retries, incident procedure, deletion, residual-risk acceptance, and open actions.
 
 The worksheet is candid about gaps: live-provider behavior, stakeholder consultation, formal impact assessment, drift monitoring, backup/restore, and fairness evaluation are not complete.
@@ -376,20 +376,20 @@ Markdown and TXT exports contain:
 
 | Level | Scope | Count |
 |---|---|---:|
-| Unit | Models, database, approvals, extraction guards, skills, policy checks, metrics, settings fallback, writer voice, failover and classification, routing, provenance | 132 |
+| Unit | Models, database, approvals, extraction guards, skills, policy checks, metrics, settings fallback, writer voice, failover and classification, routing, provenance, token totals | 134 |
 | End-to-end | Real compiled graph, real SQLite, real approval state machine, mock LLM; TC-01–TC-13 plus run-mode provenance and revision state | 15 |
-| UI | Streamlit `AppTest`: all five pages, decision refusal, approval, rejection confirmation, revision, finalization, readability chip | 6 |
-| **Total** | | **153** |
+| UI | Streamlit `AppTest`: all five pages, decision refusal, approval, rejection confirmation, revision, finalization, readability chip, dashboard token totals | 7 |
+| **Total** | | **156** |
 
 Additional recorded smoke checks:
 
 - Manual mock run reached `awaiting_human_review`; approval and resume reached `completed`.
 - Streamlit server health endpoint returned `ok`.
-- All 153 tests passed.
+- All 156 tests passed.
 - Theme checks 16/16 PASS; contrast checks 40/40 PASS.
 - Playwright responsive check at 360/768/1280/1536: **PASS** with full-page screenshots in `ui_checks/`.
 - Browser spot-check of Review and History at 1280 and 360: **PASS** (`ui_checks/review_*.png`, `history_*.png`); the 360 px sidebar collapses and still reaches every page.
-- `ruff check .` clean; coverage **79.76%** (statement + branch); CI matrix runs lint, tests with a 75% gate plus a 70% floor for `llm_service.py`, and theme/contrast on Windows and Ubuntu.
+- `ruff check .` clean; coverage **79.78%** (statement + branch); CI matrix runs lint, tests with a 75% gate plus a 70% floor for `llm_service.py`, and theme/contrast on Windows and Ubuntu.
 - Real mode: one full task on 29 October 2026 served by `gemini:gemini-3.5-flash` with no fallback, 5 LLM calls, 7,401 input / 8,668 output tokens, 61.2 s summed agent latency. A single recorded run, not a benchmark.
 - Approval race hardening: checks and writes share one transaction; a unique `(version_id, decision)` index backs the single-user check. Two concurrent approvals record exactly one.
 - Extraction guards: 200-page PDF cap, DOCX entry/expanded-size/compression-ratio limits, and signature checks, all covered by tests.
@@ -416,12 +416,14 @@ Additional recorded smoke checks:
 ### 6.3 Recorded result
 
 ```text
-$ .\.venv\Scripts\python.exe -m pytest tests\ -q
-...................................................................                      [100%]
-153 passed, 4 warnings in 13.12s
+$ .\.venv\Scripts\python.exe -m pytest tests\
+........................................................................ [ 46%]
+........................................................................ [ 92%]
+............                                                             [100%]
+156 passed in 21.69s
 ```
 
-Duration varies by machine. The recorded result is the actual run, not an estimate.
+Duration varies by machine. The recorded result is the actual run, not an estimate. `ResourceWarning` notices appear only when the Streamlit-cached SQLite handles are collected during the session, so they are not part of every run.
 
 ### 6.4 What the evaluation proves
 
@@ -555,7 +557,7 @@ Redacting the draft would make a meaningful review impossible: the reviewer must
 
 AegisFlow demonstrates that a hierarchical multi-agent document system can be useful without being unaccountable. The Planner establishes intent, the Orchestrator controls flow, specialist workers do the language work, deterministic checks and an independent reviewer challenge the result, and a human approves the exact version that will be exported.
 
-The prototype is complete for the course scope: it runs in mock mode, it is tested with 153 passing tests, it enforces a hash-bound approval gate, it documents eight governance rules and nine risks, it includes a project-scoped UI design system, and it maps every course deliverable to evidence. It is equally important that the report does not overclaim: real mode has been executed once end to end and is reported as a single recorded run, not a benchmark, and that limitation is visible in the README, testing docs, NIST worksheet, and this report.
+The prototype is complete for the course scope: it runs in mock mode, it is tested with 156 passing tests, it enforces a hash-bound approval gate, it documents eight governance rules and nine risks, it includes a project-scoped UI design system, and it maps every course deliverable to evidence. It is equally important that the report does not overclaim: real mode has been executed once end to end and is reported as a single recorded run, not a benchmark, and that limitation is visible in the README, testing docs, NIST worksheet, and this report.
 
 The central lesson is simple: **generation can be probabilistic; authority should not be.**
 
@@ -611,7 +613,7 @@ AegisFlow/
 │   └── ui/                        Five pages, tokenized components, responsive hierarchy
 ├── skills/                        6 SKILL.md packages
 ├── sample_data/                   Clean, injection, corrupt, encrypted fixtures
-├── tests/                         153 tests
+├── tests/                         156 tests
 ├── docs/                          Design, governance, risk, NIST, testing, report
 └── slides/                        Self-contained HTML deck
 ```
@@ -622,7 +624,7 @@ AegisFlow/
 
 | Claim | Evidence |
 |---|---|
-| 153 tests passed | `docs/testing.md` §6; `tests/` |
+| 156 tests passed | `docs/testing.md` §6; `tests/` |
 | Approval enforcement | `docs/human_approval.md`; TC-01–TC-05, TC-10; UI approval and rejection tests |
 | Selective routing | TC-13; `docs/workflow.md` §4 |
 | Governance rules | `docs/governance_rules.md`; `test_governance.py` |

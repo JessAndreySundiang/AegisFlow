@@ -499,6 +499,29 @@ class Database:
         )
         return [dict(r) for r in rows]
 
+    def task_usage(self, task_id: str) -> dict[str, int]:
+        """Token totals for one task.
+
+        Only executions that reported usage are counted, so a deterministic agent
+        (for example the policy checker) does not inflate the call count.
+        """
+        row = self._fetchone(
+            """SELECT COUNT(*) AS calls,
+                      COALESCE(SUM(input_tokens), 0) AS input_tokens,
+                      COALESCE(SUM(output_tokens), 0) AS output_tokens
+                 FROM agent_executions
+                WHERE task_id = ?
+                  AND (input_tokens IS NOT NULL OR output_tokens IS NOT NULL)""",
+            (task_id,),
+        )
+        if row is None:
+            return {"calls": 0, "input_tokens": 0, "output_tokens": 0}
+        return {
+            "calls": int(row["calls"]),
+            "input_tokens": int(row["input_tokens"]),
+            "output_tokens": int(row["output_tokens"]),
+        }
+
     # ---------------------------------------------------------------- versions
     def add_output_version(
         self,

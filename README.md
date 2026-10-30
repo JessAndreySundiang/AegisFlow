@@ -6,7 +6,7 @@ A governed, hierarchical multi-agent document-task prototype built with **LangGr
 
 AegisFlow turns uploaded PDF/TXT/DOCX files into a reviewed deliverable through a visible chain of specialist agents. It is designed around one rule: **no output is finalized, exported as final, or marked complete without a human approval bound to the exact output version and content hash.**
 
-> **Status: working prototype, mock mode verified, real mode executed once.** All 153 automated tests pass. Real mode ran one full task end to end on 29 October 2026 (`gemini:gemini-3.5-flash`, 5 LLM calls, 7,401 input / 8,668 output tokens, no fallback); that is a single recorded run, not a benchmark. See [Verification status](#verification-status).
+> **Status: working prototype, mock mode verified, real mode executed once.** All 156 automated tests pass. Real mode ran one full task end to end on 29 October 2026 (`gemini:gemini-3.5-flash`, 5 LLM calls, 7,401 input / 8,668 output tokens, no fallback); that is a single recorded run, not a benchmark. See [Verification status](#verification-status).
 >
 > **Repository:** <https://github.com/JessAndreySundiang/AegisFlow>
 
@@ -72,7 +72,7 @@ Open <http://localhost:8501>.
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
 
-Expected result at the time of writing: **153 passed**.
+Expected result at the time of writing: **156 passed**.
 
 ### Quality checks
 
@@ -82,7 +82,7 @@ Expected result at the time of writing: **153 passed**.
 .\.venv\Scripts\python.exe -m pytest --cov=aegisflow --cov-report=term-missing
 ```
 
-Lint is clean, and the suite sits at **79.76% coverage** (statement + branch) with a CI gate of 75% and a separate 70% floor for the failover logic in `aegisflow/services/llm_service.py`. `.github/workflows/ci.yml` runs lint, tests with coverage, and the theme/contrast checks on Windows and Ubuntu for every push.
+Lint is clean, and the suite sits at **79.78% coverage** (statement + branch) with a CI gate of 75% and a separate 70% floor for the failover logic in `aegisflow/services/llm_service.py`. `.github/workflows/ci.yml` runs lint, tests with coverage, and the theme/contrast checks on Windows and Ubuntu for every push.
 
 ### Try it without uploading anything
 
@@ -203,7 +203,7 @@ AegisFlow/
 │   └── ui/                    # Streamlit pages and shared components
 ├── skills/                    # 6 SKILL.md instruction packages
 ├── sample_data/               # Clean, injection, corrupt, encrypted fixtures
-├── tests/                     # 153 unit, integration, E2E, UI tests
+├── tests/                     # 156 unit, integration, E2E, UI tests
 ├── docs/                      # Design, governance, risk, testing, NIST, report
 └── slides/                    # Self-contained HTML presentation
 ```
@@ -214,8 +214,8 @@ AegisFlow/
 
 | Area | Status | Evidence |
 |---|---|---|
-| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 153 passing tests |
-| Engineering baseline | **Implemented** | `ruff check` clean; 79.76% coverage with a 75% gate and a 70% failover floor; CI matrix (Windows + Ubuntu) runs lint, tests, theme and contrast |
+| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 156 passing tests |
+| Engineering baseline | **Implemented** | `ruff check` clean; 79.78% coverage with a 75% gate and a 70% failover floor; CI matrix (Windows + Ubuntu) runs lint, tests, theme and contrast |
 | Human approval / hash binding | **Implemented and verified** | E2E + approval unit tests; UI approval and rejection flows |
 | Approval race and DB backstop | **Implemented and verified** | Checks and write in one transaction; unique `(version_id, decision)` index; concurrent-approval test |
 | Upload extraction guards | **Implemented and verified** | 10 MB cap, 200-page PDF cap, DOCX entry/size/ratio limits, signature checks |

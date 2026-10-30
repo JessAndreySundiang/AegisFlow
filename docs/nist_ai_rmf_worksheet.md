@@ -67,7 +67,7 @@ Low tolerance for unauthorized finalization, fabricated claims, and secret leaka
 | Category | Intended outcome | AegisFlow implementation / evidence | Status | Gap / action |
 |---|---|---|---|---|
 | MEASURE 1 — Metrics | Appropriate metrics are selected | Groundedness, citation coverage, revisions, approval outcome, time reduction, retries | ✅ | Metrics are defined; no statistical benchmark across a corpus |
-| MEASURE 2 — Evaluation | System is evaluated against criteria | 153 automated tests, incl. 15 E2E and 6 UI flows; manual mock smoke run; one real-mode task on `gemini:gemini-3.5-flash` with no fallback (5 calls, 7,401/8,668 tokens); theme 16/16 and contrast 40/40 PASS | ✅ | Real-provider quality and latency not measured |
+| MEASURE 2 — Evaluation | System is evaluated against criteria | 156 automated tests, incl. 15 E2E and 7 UI flows; manual mock smoke run; one real-mode task on `gemini:gemini-3.5-flash` with no fallback (5 calls, 7,401/8,668 tokens); theme 16/16 and contrast 40/40 PASS | ✅ | Real-provider quality and latency not measured |
 | MEASURE 3 — Tracking | Risks are monitored over time | Audit log, agent executions, workload metrics, dashboard counts | ✅ | No automated drift monitoring; local-only |
 | MEASURE 4 — Feedback | Feedback is collected and used | Reviewer feedback on revisions; quality rating; approval outcome | 🟡 | No structured post-deployment feedback loop |
 

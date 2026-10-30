@@ -1,9 +1,9 @@
 # Test Plan and Results
 
-**System:** AegisFlow v0.1.0
-**Date:** 26 October 2026
+**System:** AegisFlow v0.6.0
+**Date:** 29 October 2026
 **Environment:** Windows, Python 3.13.7, project `.venv`, pytest 9.1.1
-**Result:** **92 passed, 0 failed** (`pytest tests\ -q`)
+**Result:** **153 passed, 0 failed** (`python -m pytest tests\`). Pytest also reports four `ResourceWarning: unclosed database` notices from the Streamlit test harness; see §6.
 
 ---
 
@@ -46,7 +46,7 @@ Tests use `tmp_path`; they do not write to the project `data/` directory. The UI
 
 | Level | Files | What is exercised |
 |---|---|---|
-| Unit | `test_models.py`, `test_database.py`, `test_approvals.py`, `test_approval_race.py`, `test_document_processing.py`, `test_settings.py`, `test_provider_contract.py`, `test_writer_voice.py`, `test_skills_loader.py`, `test_governance.py`, `test_metrics.py` | Schemas, transitions, hashing, persistence, approvals and races, extraction guards, provider contracts, writer voice, skills, policy checks, metrics |
+| Unit | `test_models.py`, `test_database.py`, `test_approvals.py`, `test_approval_race.py`, `test_document_processing.py`, `test_settings.py`, `test_provider_contract.py`, `test_failover.py`, `test_orchestrator_routing.py`, `test_provenance.py`, `test_writer_voice.py`, `test_skills_loader.py`, `test_governance.py`, `test_metrics.py` | Schemas, transitions, hashing, persistence, approvals and races, extraction guards, provider contracts, candidate parsing and failover, typed error classification, routing destinations, model provenance, writer voice, skills, policy checks, metrics |
 | Integration / E2E | `test_e2e.py` (TC-01 to TC-13) | Real compiled LangGraph, real SQLite, real approval state machine, mock LLM |
 | UI | `test_ui_smoke.py` | Streamlit `AppTest`: all five pages, review form, approval, rejection confirmation, finalization |
 | Manual smoke | recorded during build | Full pipeline to `awaiting_human_review`, approve/resume to `completed`, exports |
@@ -89,19 +89,22 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 | File | Tests | Coverage focus |
 |---|---:|---|
 | `test_models.py` | 7 | Plan id/dependency validation, blocked-plan rule, claim text, stable hash, status values |
-| `test_settings.py` | 9 | Mock default, four real-mode fallback paths, Gemini key alias, secret-free `describe()`, invalid mode/number |
-| `test_database.py` | 7 | Task lifecycle, invalid transitions, version numbering/hash, cascade delete, audit redaction, workload, counts |
+| `test_settings.py` | 16 | Mock default, real-mode fallback paths, chain-wide key validation, Gemini key alias, secret-free `describe()`, invalid mode/number/timeout |
+| `test_database.py` | 17 | Task lifecycle, invalid transitions, version numbering/hash, cascade delete, audit redaction, workload, counts, provider-fallback audit |
 | `test_approvals.py` | 8 | Approve/finalize, agent refusal, duplicate, stale version, hash mismatch, content tamper, reject terminal, revision feedback/limit |
 | `test_approval_race.py` | 3 | Two concurrent approvals record exactly one; unique index exists and rejects direct duplicate inserts |
 | `test_document_processing.py` | 15 | Extensions, TXT/PDF/DOCX extraction, empty, corrupted, encrypted, unsupported, size limit, DOCX bomb, PDF page cap, PDF signature, injection scan, delimiters, safe filenames, deletion |
-| `test_provider_contract.py` | 8 | Real-provider JSON parsing, fenced JSON, malformed output, timeout/rate-limit retry, 401 non-retry, construction guards |
+| `test_provider_contract.py` | 16 | Real-provider JSON parsing, fenced JSON, malformed output, timeout/rate-limit retry, 401 non-retry, construction guards |
+| `test_failover.py` | 17 | Candidate parsing, explicit `provider:model` routing, cross-provider slash rejection, typed error classification, whole-token status codes, per-candidate retry budget, usage fields |
+| `test_orchestrator_routing.py` | 5 | Summary vs report destinations, routing stays inside the executor whitelist |
+| `test_provenance.py` | 9 | Model backend/id recorded per execution, fallback and exhaustion audit, no invented provider |
 | `test_writer_voice.py` | 2 | Banned meta-phrases absent, 2-4 cited sentences, page count in the source line, attention block only when facts warrant it |
 | `test_skills_loader.py` | 5 | Six skills load, agent mapping, catalog/unknown, malformed frontmatter/body |
 | `test_governance.py` | 9 | Eight unique rules, good draft, missing reference/section, injection, secret, external action, simulated warning, invented email |
 | `test_metrics.py` | 3 | Groundedness, citation coverage, time reduction (including negative) |
-| `test_e2e.py` | 13 | TC-01 to TC-13 |
-| `test_ui_smoke.py` | 3 | Streamlit pages + approval flow + rejection confirmation + revision flow |
-| **Total** | **92** | |
+| `test_e2e.py` | 15 | TC-01 to TC-13 plus the run-mode provenance invariant and revision state hygiene |
+| `test_ui_smoke.py` | 6 | Streamlit pages + approval flow + rejection confirmation + revision flow + readability chip |
+| **Total** | **153** | |
 
 ---
 
@@ -109,9 +112,10 @@ The mock LLM is not a stub pipeline: it is a real LangChain `BaseChatModel` subc
 
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
-...................................................................                      [100%]
-92 passed in 10.10s
+153 passed, 4 warnings in 13.12s
 ```
+
+The four warnings are `ResourceWarning: unclosed database` notices raised when a SQLite connection cached for Streamlit is garbage-collected at the end of an `AppTest` case. They are test-harness hygiene, not failures; the suite is 153 passed, 0 failed.
 
 A separate Streamlit server smoke test was run:
 
@@ -138,7 +142,7 @@ PASS width=1536 scrollWidth=1536 bodyWidth=1536 innerWidth=1536
 RESULT PASS
 ```
 
-Playwright and Chromium are development-only dependencies (`requirements-dev.txt`), not runtime requirements. `check_responsive.py` checks overflow at four widths, `check_pages.py` sweeps all five pages at those widths, and `check_accessibility.py` runs the vendored axe-core 4.10.2 in light and dark mode. Generated screenshots and audit JSON live under `ui_checks/pages/` and `ui_checks/axe/`, which are CI artifacts and are not committed.
+Playwright and Chromium are development-only dependencies (`requirements-dev.txt`), not runtime requirements. `check_responsive.py` checks overflow at four widths, `check_pages.py` sweeps all five pages at those widths, and `check_accessibility.py` runs the vendored axe-core 4.10.2 in light and dark mode. The accessibility audit raises instead of running when a page still carries `data-stale` containers, so a faded rerun cannot be recorded as a pass. Generated screenshots and audit JSON live under `ui_checks/pages/` and `ui_checks/axe/`, which are CI artifacts and are not committed.
 
 A separate browser spot-check navigated to **Review** and **History** at 1280 and 360 px (`ui_checks/review_1280.png`, `review_360.png`, `history_1280.png`, `history_360.png`). Review showed the version/hash header, the amber “Awaiting review” badge, and the read-only draft; History showed 44 px Delete/Export row actions with no clipping, and the collapsed sidebar at 360 px still reached every page.
 
@@ -159,11 +163,27 @@ $ .\.venv\Scripts\python.exe -m ruff check .
 All checks passed!
 
 $ .\.venv\Scripts\python.exe -m pytest --cov=aegisflow --cov-report=term-missing
-TOTAL                                     3299    584    996    236    78%
-92 passed
+TOTAL                                     3776    599   1180    262    80%
+153 passed, 4 warnings in 13.12s
 ```
 
-`pyproject.toml` configures lint, pytest, and branch coverage; `requirements-dev.txt` pins `ruff`, `pytest-cov`, and `playwright`. CI (`.github/workflows/ci.yml`) runs lint, tests with a 75% coverage gate, and theme/contrast on Windows and Ubuntu, plus a seeded browser job on Ubuntu that installs Chromium, sweeps all five pages, runs axe, and uploads `ui-evidence`. Settings fallback is covered by `test_settings.py`: missing authorization, key, or model must fall back to mock, and `describe()` must never expose a key.
+`pyproject.toml` configures lint, pytest, and branch coverage; `requirements-dev.txt` pins `ruff`, `pytest-cov`, and `playwright`. CI (`.github/workflows/ci.yml`) runs lint, tests with a 75% coverage gate and a 70% floor for `aegisflow/services/llm_service.py`, and theme/contrast on Windows and Ubuntu, plus a seeded browser job on Ubuntu that installs Chromium, sweeps all five pages, runs axe, and uploads `ui-evidence`. Settings fallback is covered by `test_settings.py`: missing authorization or model, or no key on any candidate, must fall back to mock, and `describe()` must never expose a key.
+
+### 6.1 Real-mode run record (29 October 2026)
+
+One task was run end to end against a live provider, outside the automated suite: start → `awaiting_human_review` → approve → `completed` → Markdown export. It is a single observation, not a benchmark.
+
+| Agent | Model | Input | Output | Latency |
+|---|---|---:|---:|---:|
+| planner | gemini:gemini-3.5-flash | 898 | 558 | 6,300 ms |
+| document_analyst | gemini:gemini-3.5-flash | 954 | 1,287 | 9,328 ms |
+| evidence_verifier | gemini:gemini-3.5-flash | 1,236 | 2,315 | 14,007 ms |
+| report_writer | gemini:gemini-3.5-flash | 2,527 | 3,840 | 19,263 ms |
+| policy_checker | deterministic, no LLM call | 0 | 0 | — |
+| reviewer | gemini:gemini-3.5-flash | 1,786 | 668 | 12,326 ms |
+| **Total** | | **7,401** | **8,668** | **61,224 ms** |
+
+The run recorded 0 provider-fallback audit events and 0 `provider_candidates_exhausted` events: every LLM call was served by the primary candidate. The draft carried `simulated=False` and no SIMULATED marker, the version was approved by a human reviewer, and the export was re-verified against the approved content hash. `python tools/smoke.py` repeats a cheaper check (one structured call) and prints `served_by`, latency, and token usage.
 
 ---
 
@@ -185,7 +205,8 @@ TOTAL                                     3299    584    996    236    78%
 - Revision and assurance loops escalate at their limits.
 - Summary routing skips verifier and writer; orchestrator routes stay whitelisted.
 - All five Streamlit pages render under `AppTest`; approval finalizes the task, and rejection requires a separate terminal confirmation.
-- In a real browser, all five pages render at 360/768/1280/1536 px with no horizontal overflow, and axe-core reports 0 WCAG 2.1 A/AA violations in light and dark mode.
+- In a real browser, all five pages render at 360/768/1280/1536 px with no horizontal overflow, and axe-core reports 0 WCAG 2.1 A/AA violations in light and dark mode. The audit refuses to run while Streamlit still marks containers as stale, so a pass cannot come from faded DOM.
+- One full task ran end to end in real mode on `gemini:gemini-3.5-flash` with no fallback and no cross-provider routing, and its approval, finalize, and export re-verified the approved content hash.
 - The UI uses icon+text status badges, 44px approval targets, version-named approval actions, and a responsive hierarchy. Green is reserved for human-approved output; SIMULATED is amber.
 - Theme tokens pass 16/16 checks and contrast passes 40/40 checks.
 
@@ -193,8 +214,8 @@ TOTAL                                     3299    584    996    236    78%
 
 | Area | Why | Status |
 |---|---|---|
-| Live OpenRouter/OpenAI/Gemini calls | Real mode not enabled | **Not executed** |
-| Real-model output quality/latency | Same | **Not measured** |
+| Live OpenRouter/OpenAI/Gemini calls | One full task on 29 October 2026 served by `gemini:gemini-3.5-flash`, no fallback | **Executed once** |
+| Real-model output quality/latency | Same single run: 61,224 ms summed, 7,401/8,668 tokens | **Not benchmarked** |
 | Browser rendering/accessibility | Playwright page sweep PASS at four widths; axe-core 0 WCAG 2.1 A/AA violations (light + dark); no pixel-diff | **Verified** |
 | OCR of scanned PDFs | Not implemented | **Not applicable** |
 | Multi-user/concurrent access | Single-user design | **Not tested** |
@@ -219,7 +240,7 @@ TOTAL                                     3299    584    996    236    78%
 
 ## 9. Known test limitations and future work
 
-1. Add a real-provider test that is skipped unless all four real-mode conditions are present, and record latency/error rates when run.
+1. Add an automated real-provider test that runs only when the four real-mode conditions are present. Until then `tools/smoke.py` is a one-call manual check, and only one full real run has been recorded.
 2. Add a pixel-diff baseline against the mockup for visual regressions; axe accessibility and the five-page browser sweep already run in CI.
 3. Add a larger injection corpus, including encoded and delimiter-breaking payloads.
 4. Add concurrency/load tests only if the deployment model changes.

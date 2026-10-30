@@ -65,6 +65,7 @@ Labels and routes stay stable so documentation, tests, and the safety language d
 ## 6. Accessibility evidence
 
 - axe-core 4.10.2, WCAG 2.1 A/AA, **0 violations** on Dashboard, New Task, Workflow, Review, and History in both light and dark mode.
+- The audit refuses to run while Streamlit still marks containers `data-stale`; a faded rerun fails the gate instead of producing a false pass.
 - Theme tokens 16/16 PASS; contrast 40/40 PASS.
 - Keyboard focus shows a 2 px teal outline; `prefers-reduced-motion` disables transitions.
 - No horizontal overflow at 360/768/1280/1536 px.

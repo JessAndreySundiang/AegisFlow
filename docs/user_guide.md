@@ -3,7 +3,7 @@
 **Version:** 0.1.0  
 **Audience:** the single local user who submits a document task and acts as the human reviewer  
 **Platform used for verification:** Windows, Python 3.13.7, project `.venv`  
-**Status:** mock mode is implemented and verified; real-provider mode is implemented but not verified.
+**Status:** mock mode is implemented and verified; real-provider mode has been executed once end to end (29 October 2026, `gemini:gemini-3.5-flash`) and is not benchmarked.
 
 ---
 
@@ -124,7 +124,7 @@ Provider values: `openrouter`, `gemini`, or `openai`.
 
 If any condition is missing, `config.py` falls back to mock mode, records a startup warning, and displays the fallback reason in the UI. It never silently sends documents externally.
 
-> **Real mode has not been executed in this build.** The adapters import correctly, but no live call was made because real mode was not enabled. See section 12.
+> **Real mode has been executed once.** On 29 October 2026 a full task ran end to end on `gemini:gemini-3.5-flash`: 5 LLM calls, 7,401 input / 8,668 output tokens, no fallback. It is a single recorded run, not a benchmark, and mock mode remains the default. `python tools/smoke.py` repeats a one-call check and prints the serving provider, latency, and token usage.
 
 ### 4.4 Optional limits
 
@@ -132,6 +132,7 @@ If any condition is missing, `config.py` falls back to mock mode, records a star
 |---|---:|---|
 | `AEGISFLOW_MAX_FILE_MB` | `10` | Maximum size per uploaded file |
 | `AEGISFLOW_MAX_RETRIES` | `2` | Retries after the first agent attempt |
+| `AEGISFLOW_LLM_TIMEOUT` | `60` | Seconds per model call, and the budget for one candidate across retries |
 | `AEGISFLOW_MAX_REVISIONS` | `2` | Human/assurance revision budget |
 | `AEGISFLOW_MAX_DELEGATION_DEPTH` | `3` | Maximum hierarchy depth |
 | `AEGISFLOW_RECURSION_LIMIT` | `80` | LangGraph recursion guard |
@@ -169,7 +170,7 @@ To stop the server, press `Ctrl+C` in the terminal.
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
 
-The last recorded result is **92 passed**. Test duration varies by machine.
+The last recorded result is **153 passed**. Test duration varies by machine.
 
 ---
 
@@ -368,7 +369,7 @@ Expected body: `ok`.
 
 ## 12. Known limitations
 
-1. **Real-provider mode is not verified.** No live OpenRouter, Gemini, or OpenAI call was made in this build.
+1. **Real-provider mode is verified for one run, not benchmarked.** One full task ran on `gemini:gemini-3.5-flash` on 29 October 2026 with no fallback; output quality, error rates, and latency under load were not measured.
 2. **No OCR.** Scanned PDFs without a text layer are unusable.
 3. **Single user, no authentication.** Reviewer identity is self-asserted.
 4. **Local SQLite is trusted.** A local administrator can edit the database and checkpoints. Hash binding is an integrity check, not a signature.

@@ -6,7 +6,7 @@ A governed, hierarchical multi-agent document-task prototype built with **LangGr
 
 AegisFlow turns uploaded PDF/TXT/DOCX files into a reviewed deliverable through a visible chain of specialist agents. It is designed around one rule: **no output is finalized, exported as final, or marked complete without a human approval bound to the exact output version and content hash.**
 
-> **Status: working prototype, mock mode verified.** All 92 automated tests pass. Real LLM mode is implemented but **not verified** because real mode was not enabled and no live provider call was made. See [Verification status](#verification-status).
+> **Status: working prototype, mock mode verified, real mode executed once.** All 153 automated tests pass. Real mode ran one full task end to end on 29 October 2026 (`gemini:gemini-3.5-flash`, 5 LLM calls, 7,401 input / 8,668 output tokens, no fallback); that is a single recorded run, not a benchmark. See [Verification status](#verification-status).
 >
 > **Repository:** <https://github.com/JessAndreySundiang/AegisFlow>
 
@@ -72,7 +72,7 @@ Open <http://localhost:8501>.
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
 
-Expected result at the time of writing: **92 passed**.
+Expected result at the time of writing: **153 passed**.
 
 ### Quality checks
 
@@ -82,7 +82,7 @@ Expected result at the time of writing: **92 passed**.
 .\.venv\Scripts\python.exe -m pytest --cov=aegisflow --cov-report=term-missing
 ```
 
-Lint is clean, and the suite sits at **78% coverage** (statement + branch) with a CI gate of 75%. `.github/workflows/ci.yml` runs lint, tests with coverage, and the theme/contrast checks on Windows and Ubuntu for every push.
+Lint is clean, and the suite sits at **79.76% coverage** (statement + branch) with a CI gate of 75% and a separate 70% floor for the failover logic in `aegisflow/services/llm_service.py`. `.github/workflows/ci.yml` runs lint, tests with coverage, and the theme/contrast checks on Windows and Ubuntu for every push.
 
 ### Try it without uploading anything
 
@@ -124,6 +124,8 @@ OPENAI_API_KEY=...
 ```
 
 `AEGISFLOW_MODEL` is a comma separated list in failover order, so the first entry is the primary and later ones are tried when it is missing or fails. Gemini is the default provider, so a bare model id goes to it. Name a provider per entry with `provider:model`; a cross-provider slash such as `openai/gpt-4o` is rejected rather than guessed at, because it reads equally as native OpenAI and as an OpenRouter id.
+
+`AEGISFLOW_LLM_TIMEOUT` sets the seconds allowed for one model call (default 60). The same value is the budget for one candidate across its retries, so a call that times out consumes the budget and failover starts instead of the retry loop multiplying the wait.
 
 `Settings.describe()` and the UI sidebar never print secret values.
 
@@ -201,7 +203,7 @@ AegisFlow/
 │   └── ui/                    # Streamlit pages and shared components
 ├── skills/                    # 6 SKILL.md instruction packages
 ├── sample_data/               # Clean, injection, corrupt, encrypted fixtures
-├── tests/                     # 92 unit, integration, E2E, UI tests
+├── tests/                     # 153 unit, integration, E2E, UI tests
 ├── docs/                      # Design, governance, risk, testing, NIST, report
 └── slides/                    # Self-contained HTML presentation
 ```
@@ -212,8 +214,8 @@ AegisFlow/
 
 | Area | Status | Evidence |
 |---|---|---|
-| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 92 passing tests |
-| Engineering baseline | **Implemented** | `ruff check` clean; 78% coverage with a 75% gate; CI matrix (Windows + Ubuntu) runs lint, tests, theme and contrast |
+| Mock-mode full pipeline | **Implemented and verified** | TC-01 to TC-13; 153 passing tests |
+| Engineering baseline | **Implemented** | `ruff check` clean; 79.76% coverage with a 75% gate and a 70% failover floor; CI matrix (Windows + Ubuntu) runs lint, tests, theme and contrast |
 | Human approval / hash binding | **Implemented and verified** | E2E + approval unit tests; UI approval and rejection flows |
 | Approval race and DB backstop | **Implemented and verified** | Checks and write in one transaction; unique `(version_id, decision)` index; concurrent-approval test |
 | Upload extraction guards | **Implemented and verified** | 10 MB cap, 200-page PDF cap, DOCX entry/size/ratio limits, signature checks |
@@ -221,13 +223,13 @@ AegisFlow/
 | Audit and redaction | **Implemented and verified** | TC-12 |
 | Streamlit UI | **Implemented and verified headlessly** | `AppTest` approval and rejection flows; server health `ok`; Playwright responsive check PASS at 360/768/1280/1536 |
 | UI design system | **Implemented and verified** | `aegisflow-ui` skill; theme 16/16 PASS; contrast 40/40 PASS; responsive check PASS with screenshots |
-| Accessibility | **Verified** | axe-core 0 WCAG 2.1 A/AA violations on five pages in light and dark; skip link, live focus, reduced-motion, 44 px targets |
+| Accessibility | **Verified** | axe-core 0 WCAG 2.1 A/AA violations on five pages in light and dark; the gate fails rather than auditing a fading page; skip link, live focus, reduced-motion, 44 px targets |
 | Summary voice | **Implemented and verified** | Substance-first summaries, page-aware source line, attention block only when warranted, banned meta-phrases tested |
-| Real OpenRouter / Gemini / OpenAI | **Implemented, not executed** | Real mode was not enabled; no live call recorded; see limitation below |
+| Real OpenRouter / Gemini / OpenAI | **Executed once, not benchmarked** | One full task on 29 October 2026 served by `gemini:gemini-3.5-flash` with no fallback: 5 LLM calls, 7,401 input / 8,668 output tokens, 61.2 s summed agent latency; see [testing.md](docs/testing.md) |
 | OCR for scanned PDFs | **Not implemented** | Documented limitation |
 | Multi-user auth / remote deployment | **Not implemented** | Single-user local prototype |
 
-> **Real-mode caveat:** the provider adapters (`ChatOpenAI` with an OpenRouter base URL, direct OpenAI, and `ChatGoogleGenerativeAI`) are constructed from verified installed packages, and the JSON parse/retry path is shared with mock mode. However, no live provider call was made. Do not present real-mode behaviour as verified until a key is configured and a live run is recorded.
+> **Real-mode caveat:** the provider adapters (`ChatOpenAI` with an OpenRouter base URL, direct OpenAI, and `ChatGoogleGenerativeAI`) are constructed from verified installed packages, and the JSON parse/retry path is shared with mock mode. Real mode has since been executed once end to end (the row above); that run proves the adapters, failover chain, approval, finalize, and export paths work against a live provider. It does not establish output quality, error rates, or latency under load, and mock mode remains the default.
 
 Other known limitations:
 
@@ -235,7 +237,7 @@ Other known limitations:
 - PII is redacted from logs, not from the source-derived draft shown to the reviewer.
 - Regex-based secret/PII detection can miss unusual identifiers.
 - The UI is a single-user local app with no login.
-- Playwright and Chromium are development-only tools (`requirements-dev.txt`). The page sweep passes at 360/768/1280/1536 px, and axe-core reports **0 WCAG 2.1 A/AA violations** on all five pages in light and dark mode (screenshots in `ui_checks/`, CI artifact `ui-evidence`). No pixel-diff against the mockup PDF was run.
+- Playwright and Chromium are development-only tools (`requirements-dev.txt`). The page sweep passes at 360/768/1280/1536 px, and axe-core reports **0 WCAG 2.1 A/AA violations** on all five pages in light and dark mode (screenshots in `ui_checks/`, CI artifact `ui-evidence`). The audit refuses to run while Streamlit still marks containers as stale, so a pass cannot be built from faded DOM. No pixel-diff against the mockup PDF was run.
 
 ---
 

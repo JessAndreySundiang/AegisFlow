@@ -285,9 +285,9 @@ SQLite is configured with `WAL` journaling, `foreign_keys=ON`, `synchronous=NORM
 | OpenAI | `ChatOpenAI` |
 | Gemini | `ChatGoogleGenerativeAI` |
 
-All use `temperature=0`, a 60-second timeout, and application-level retries. Provider text is stripped of Markdown fences, reduced to the outermost JSON object, and validated against the agent schema. Malformed output is classified separately from transient errors.
+All use `temperature=0`, `timeout=AEGISFLOW_LLM_TIMEOUT` (default 60 s), and application-level retries. The same timeout is the budget for one candidate across its retries, so a call that times out fails over instead of being retried until the stall multiplies. Provider text is stripped of Markdown fences, reduced to the outermost JSON object, and validated against the agent schema. Malformed output is classified separately from transient errors, and transient/auth classification checks exception types before falling back to message text.
 
-**Verification status:** adapters are implemented and importable, but no live provider call was made because real mode was not enabled. Real mode is therefore *implemented but unverified*.
+**Verification status:** the adapters are implemented, and real mode has been executed once end to end: one task on 29 October 2026 served by `gemini:gemini-3.5-flash` with no fallback, 5 LLM calls, 7,401 input / 8,668 output tokens. That is a single recorded run, not a benchmark; the chain, approval, finalize, and export paths are exercised, while output quality and latency under load are not measured.
 
 ---
 

@@ -178,7 +178,7 @@ These eight rules are the normative controls for the prototype. Each rule has a 
 
 **Failure behavior.** Escalate with a reason; never continue indefinitely.
 
-**Residual risk.** Lead iteration limits are fixed in code rather than configurable. A provider that hangs beyond the 60-second timeout depends on the SDK timeout behaviour (real mode unverified).
+**Residual risk.** Lead iteration limits are fixed in code rather than configurable. `AEGISFLOW_LLM_TIMEOUT` (default 60 s) bounds each call and the whole candidate across retries, so a slow provider fails over instead of being retried repeatedly; a call that ignores the SDK's own timeout can still hang, because no separate watchdog thread interrupts it.
 
 ---
 

@@ -4,7 +4,7 @@ theme: default
 paginate: true
 size: 16:9
 header: "AegisFlow · SIP10 Final Project"
-footer: "Working prototype · mock mode verified · 92 tests passing"
+footer: "Working prototype · mock mode verified · real mode executed once · 153 tests passing"
 style: |
   :root {
     --ink: #0f172a;
@@ -66,7 +66,7 @@ style: |
 ## A governed hierarchical multi-agent system for document tasks — with human-in-the-loop approval
 
 **SIP10 Final Project** · 26 October 2026  
-Working prototype · mock mode verified · **92 tests passing**
+Working prototype · mock mode verified · real mode executed once · **153 tests passing**
 
 <!--
 SPEAKER NOTES
@@ -124,7 +124,7 @@ Give one concrete example for each. Then transition: a prompt is advisory; a con
 - **6** SKILL.md packages
 - **8** governance rules
 - **9** risks
-- **92** tests (13 E2E + 76 unit/integration + 3 UI)
+- **153** tests (15 E2E + 132 unit/integration + 6 UI)
 - Hash-bound approval
 - GOVERN / MAP / MEASURE / MANAGE
 
@@ -323,7 +323,7 @@ These are not advisory prompts. If a control cannot be enforced in code or a det
 
 <div class="card warn" style="margin-top:18px">
 <h3>Stated gaps</h3>
-<p>Live provider behavior unverified · regex detection incomplete · single-user local prototype · no fairness evaluation · no formal impact study</p>
+<p>Real provider executed once, not benchmarked · regex detection incomplete · single-user local prototype · no fairness evaluation · no formal impact study</p>
 </div>
 
 <!--
@@ -409,26 +409,26 @@ The UI is backed by the project-scoped aegisflow-ui skill; technical tables and 
 
 ---
 
-# Tests: 92 passed
+# Tests: 153 passed
 
 <div class="three">
 <div class="card ok">
-<h3>51</h3>
-<p>Unit + integration<br><span class="small">models, DB, approvals, extraction, skills, governance, metrics</span></p>
+<h3>132</h3>
+<p>Unit + integration<br><span class="small">models, DB, approvals, extraction, skills, governance, metrics, failover</span></p>
 </div>
 <div class="card ok">
-<h3>13</h3>
+<h3>15</h3>
 <p>End-to-end<br><span class="small">TC-01 to TC-13 on the real graph and SQLite</span></p>
 </div>
 <div class="card ok">
-<h3>3</h3>
+<h3>6</h3>
 <p>Streamlit UI<br><span class="small">all pages + approval, rejection, revision flows</span></p>
 </div>
 </div>
 
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
-92 passed in 10.10s
+153 passed in 13.12s
 ```
 
 <p class="small">Proven: approval, tamper detection, injection, routing, escalation, audit redaction.<br>
@@ -467,7 +467,7 @@ Offer the command. Distinguish what the tests prove from what they do not.
 
 <!--
 SPEAKER NOTES
-If asked whether real GPT/Gemini was tested: no. The adapters are implemented; no live call was made.
+If asked whether real GPT/Gemini was tested: yes, once. One full task ran end to end on gemini-3.5-flash on 29 October 2026 with no fallback (5 calls, 7,401 input / 8,668 output tokens). It is a single recorded run, not a benchmark; mock mode is still the default.
 -->
 
 ---
@@ -480,7 +480,7 @@ Planner → Orchestrator → 3 executors → Reviewer → Human → Output
 
 - 6 agents · 6 skills · 8 governance rules · 9 risks
 - Approval bound to the exact version and SHA-256 hash
-- 92 automated tests · mock mode verified
+- 153 automated tests · real mode executed once, not benchmarked
 - Real-provider mode implemented but **not verified**
 
 ### Thank you — questions?

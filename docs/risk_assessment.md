@@ -3,7 +3,7 @@
 **System:** AegisFlow v0.1.0
 **Assessment date:** 26 October 2026
 **Method:** likelihood × impact, 1–5 each (score 1–25)
-**Scope:** mock-mode prototype; real-provider path assessed as implemented but unverified
+**Scope:** mock-mode prototype; real-provider path executed once end to end and not benchmarked
 
 ---
 
@@ -143,11 +143,11 @@ Initial high risks: **R-01, R-02, R-03, R-04**. All four have verified controls 
 
 ### R-05 — Runaway loops or cost
 
-Bounded by `max_retries` (2), team run limit (4), lead iteration limits (8/6/6), `max_revisions` (2), and `recursion_limit` (80). Any limit breach escalates with a reason. Verified by TC-05 and TC-11. Residual: a provider that hangs beyond its timeout depends on SDK behaviour (real mode unverified).
+Bounded by `max_retries` (2), team run limit (4), lead iteration limits (8/6/6), `max_revisions` (2), and `recursion_limit` (80). Any limit breach escalates with a reason. Verified by TC-05 and TC-11. Residual: `AEGISFLOW_LLM_TIMEOUT` (default 60 s) bounds each call and the whole candidate across retries, but a provider that ignores its own timeout can still hold an in-flight call until the process-level timeout, because there is no separate watchdog thread.
 
 ### R-06 — Provider outage or malformed output
 
-The real adapter retries transient errors with exponential backoff, classifies malformed output separately, and escalates after the budget. Mock fallback occurs only at startup configuration, not mid-run. Residual: no circuit breaker or multi-provider failover; real-mode behaviour unverified.
+The real adapter retries transient errors with exponential backoff, classifies malformed output separately, and moves to the next candidate in the chain when a provider is rate limited, unavailable, or misconfigured. Mock fallback occurs only at startup configuration, not mid-run. Residual: no circuit breaker; a hung in-flight call can still stall a task until its timeout, and failover is verified by fake clients plus one recorded real task rather than by a multi-provider outage drill.
 
 ### R-07 — Unreadable documents
 
@@ -171,7 +171,7 @@ The following are accepted **only** for a single-user, local, academic prototype
 2. Regex-based injection/PII detection is incomplete.
 3. The reviewer identity is self-asserted; there is no authentication.
 4. The draft shown to the reviewer may contain source PII by design.
-5. Real-provider quality, latency, and data handling are unverified.
+5. Real-provider quality, latency under load, and data handling are not benchmarked; one task has been executed and recorded.
 6. No fairness/bias evaluation was performed; the system is not intended for people-decisions.
 
 **Conditions of acceptance:** mock mode is the default; no regulated/confidential data; output is labeled simulated; a human reviews every draft; the app is not exposed to a network or multiple users.

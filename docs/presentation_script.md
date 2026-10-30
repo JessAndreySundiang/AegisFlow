@@ -3,7 +3,7 @@
 **Delivery limit:** 15 minutes maximum (Q&A after, if permitted)  
 **Deck:** [`slides/aegisflow_deck.html`](../slides/aegisflow_deck.html) · Marp source: [`slides.md`](slides.md)  
 **Mode for the live demo:** mock mode (deterministic, local, no network)  
-**Status to state on stage:** 92 automated tests pass; real-provider mode is implemented but **not verified**.
+**Status to state on stage:** 153 automated tests pass; real-provider mode has been executed once end to end (29 October 2026, `gemini:gemini-3.5-flash`, no fallback) and is not benchmarked.
 
 > **Speaker rule:** never describe mock output as real AI analysis. The UI labels it SIMULATED for a reason. If the demo fails, use the fallback in section 10 and say so plainly.
 
@@ -72,11 +72,11 @@ If the demo runs long, shorten slides 9–11 to the one-line rule summaries and 
 
 > “The course asks for a pipeline, a hierarchy, at least three agents and three skills, five governance rules, five risks, five tests, a NIST worksheet, and a human approval point.
 >
-> AegisFlow implements all twelve deliverables: six agents and six SKILL.md packages, eight governance rules, nine risks, six end-to-end scenarios plus seven more, and 92 automated tests in total.
+> AegisFlow implements all twelve deliverables: six agents and six SKILL.md packages, eight governance rules, nine risks, six end-to-end scenarios plus seven more, and 153 automated tests in total.
 >
 > The basic workflow maps literally: Planner first, Orchestrator next, three executor roles, Reviewer, human approval, final output. The added team leads make the hierarchy real without changing that required chain.”
 
-**Cue:** do not read every row. Point to “6 agents / 6 skills / 8 rules / 9 risks / 92 tests”.
+**Cue:** do not read every row. Point to “6 agents / 6 skills / 8 rules / 9 risks / 153 tests”.
 
 ---
 
@@ -244,7 +244,7 @@ validate → planner → orchestrator
 
 > “The worksheet is organized by the four NIST functions. GOVERN defines ownership and the external-provider gate. MAP states intended use, exclusions, and the risk register. MEASURE uses the audit trail and metrics, without inventing benchmark numbers. MANAGE defines response, escalation, recovery, and residual risk.
 >
-> The honest gaps are recorded: real-provider behavior is unverified, regex detection is incomplete, and the prototype is single-user.”
+> The honest gaps are recorded: real-provider behavior is verified for one run but not benchmarked, regex detection is incomplete, and the prototype is single-user.”
 
 **Cue:** do not claim NIST certification. This is a course worksheet.
 
@@ -324,20 +324,20 @@ finalize → export re-check → approved Markdown/TXT
 
 | Level | Tests |
 |---|---:|
-| Unit / integration | 76 |
-| End-to-end scenarios TC-01–TC-13 | 13 |
-| Streamlit UI flows (approval, rejection, revision) | 3 |
-| **Total** | **92 passed** |
+| Unit / integration | 132 |
+| End-to-end scenarios TC-01–TC-13 | 15 |
+| Streamlit UI flows (approval, rejection, revision) | 6 |
+| **Total** | **153 passed** |
 
 **Say**
 
-> “The recorded run is 92 passed, zero failed, in about 10 seconds. The suite uses the real compiled LangGraph, real SQLite, real approval logic, and a real LangChain chat-model subclass for deterministic mock output. It is not a stub pipeline.
+> “The recorded run is 153 passed, zero failed, in about 13 seconds. The suite uses the real compiled LangGraph, real SQLite, real approval logic, and a real LangChain chat-model subclass for deterministic mock output. It is not a stub pipeline.
 >
 > The tests prove the happy path, rejection, new-version invalidation, tamper detection, injection handling, missing input, mixed unreadable files, bounded escalation, audit redaction, selective routing, and a real approval through Streamlit’s test harness.
 >
-> What they do not prove: live provider quality or latency, browser CSS/accessibility, OCR, multi-user concurrency, or disk-failure recovery. Those are listed as not tested, not hand-waved.”
+> What they do not prove: real-model output quality or latency under load, pixel-level visual regression, OCR, multi-user concurrency, or disk-failure recovery. Those are listed as not tested, not hand-waved. One real-mode task has been executed separately and recorded in `docs/testing.md`.”
 
-**Cue:** if pressed on “92 tests” ask them to run the command; show `docs/testing.md`.
+**Cue:** if pressed on “153 tests” ask them to run the command; show `docs/testing.md`.
 
 ---
 
@@ -345,7 +345,7 @@ finalize → export re-check → approved Markdown/TXT
 
 **On screen:** four honest limitations.
 
-1. Real mode implemented, **not executed** (real mode not enabled; no live call authorized).
+1. Real mode **executed once** (29 October 2026, `gemini:gemini-3.5-flash`, no fallback), not benchmarked.
 2. Local SQLite is trusted; hash is integrity, not a signature.
 3. Regex detection and redaction are best-effort.
 4. Single user, no auth, no OCR, no external actions.
@@ -354,7 +354,7 @@ finalize → export re-check → approved Markdown/TXT
 
 > “The limitations are part of the design story.
 >
-> Real-provider mode is implemented for OpenRouter, Gemini, and OpenAI, but I did not make a live call, so I do not claim it is verified.
+> Real-provider mode is implemented for OpenRouter, Gemini, and OpenAI, and I ran one full task end to end on Gemini on 29 October 2026 with no fallback. That is one recorded run, so I do not claim output quality, error rates, or latency under load.
 >
 > The local database is trusted. Hash binding catches stale or altered content, but a local administrator who rewrites content, hash, and review rows can forge history. A production system needs authentication, signatures, and an external approval service.
 >
@@ -373,7 +373,7 @@ finalize → export re-check → approved Markdown/TXT
 > **Generation is probabilistic. Authority is not.**
 >
 > Planner → Orchestrator → 3 executors → Reviewer → Human → Output  
-> 92 automated tests · 8 governance rules · 9 risks · 6 skills · human approval bound to the exact version and hash
+> 153 automated tests · 8 governance rules · 9 risks · 6 skills · human approval bound to the exact version and hash
 
 **Say**
 
@@ -439,14 +439,14 @@ A: The review page shows the draft, claims, evidence, policy findings, reviewer 
 ### Testing and claims
 
 **Q: Did you test real GPT/Gemini?**  
-A: No. Real mode was not enabled and no live provider call was authorized in this build. The adapters are implemented, but real mode is unverified. That is why every document labels it that way.
+A: Yes, once. One full task ran end to end on `gemini:gemini-3.5-flash` on 29 October 2026 with no fallback: 5 LLM calls, 7,401 input / 8,668 output tokens. It is a single recorded run, not a benchmark, so the documents report it as executed once rather than verified under load.
 
 **Q: Can I see the test result?**  
 A: Yes:
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests\ -q
 ```
-The recorded result is 92 passed.
+The recorded result is 153 passed.
 
 **Q: Is the mock output meaningful?**  
 A: It is deterministic scripted output for testing orchestration, not a claim of analysis quality. The UI says SIMULATED on every page and every export.

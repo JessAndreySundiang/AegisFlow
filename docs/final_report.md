@@ -6,7 +6,7 @@
 **Date:** 26 October 2026  
 **Prepared by:** SIP10 project author  
 **Environment:** Windows, Python 3.13.7, project `.venv`  
-**Recorded test result:** **92 passed, 0 failed** (`pytest tests\ -q`)
+**Recorded test result:** **153 passed, 0 failed** (`python -m pytest tests\`)
 
 ---
 
@@ -16,7 +16,7 @@ AegisFlow is a working prototype of a governed, hierarchical multi-agent documen
 
 The prototype is designed around a distinction between **generation** and **authority**. Language models generate and transform text. Deterministic code owns routing, permissions, retry limits, approval validation, and export checks. The human owns final approval.
 
-Mock mode is implemented and verified with 92 automated tests, including 13 end-to-end scenarios and three headless Streamlit UI flows. A project-scoped `aegisflow-ui` skill documents the tokenized, responsive interface. Real-provider adapters for OpenRouter, Gemini, and OpenAI are implemented, but **no live provider call was made** in this build because real mode was not enabled and no external call was authorized. Real mode is therefore reported as implemented but unverified, not as a demonstrated capability.
+Mock mode is implemented and verified with 153 automated tests, including 15 end-to-end scenarios and six headless Streamlit UI flows. A project-scoped `aegisflow-ui` skill documents the tokenized, responsive interface. Real-provider adapters for OpenRouter, Gemini, and OpenAI are implemented, and real mode has since been executed once end to end: one task on 29 October 2026 served by `gemini:gemini-3.5-flash` with no fallback, 5 LLM calls, and 7,401 input / 8,668 output tokens. That is a single recorded run, not a benchmark. It demonstrates that the adapters, chain, approval gate, finalize, and export paths work against a live provider; it does not establish output quality, error rates, or latency under load.
 
 ---
 
@@ -81,7 +81,7 @@ The assignment images specify:
 | `SKILL.md` packages | 3 | **6** |
 | Governance rules | 5 | **8** |
 | Risks | 5 | **9** |
-| Test cases | 5 | **13 E2E + 76 unit/integration + 3 UI = 92** |
+| Test cases | 5 | **15 E2E + 132 unit/integration + 6 UI = 153** |
 | NIST functions | 4 | **4** |
 | UI pages | not specified | **5** |
 | UI design system skills | not specified | **1** (`aegisflow-ui`) |
@@ -241,7 +241,7 @@ Each rule has an owner, enforcement point, evidence, failure behavior, residual 
 
 - **GOVERN:** eight rules with named owners, a third-party provider gate, approval accountability, and documented policies.
 - **MAP:** intended use, single-user context, non-goals, data sources, affected parties, and nine risks.
-- **MEASURE:** groundedness, citation coverage, approval outcome, revisions, retries, elapsed time, and 92 tests. No benchmark numbers are invented.
+- **MEASURE:** groundedness, citation coverage, approval outcome, revisions, retries, elapsed time, and 153 tests. No benchmark numbers are invented.
 - **MANAGE:** block/escalate paths, bounded retries, incident procedure, deletion, residual-risk acceptance, and open actions.
 
 The worksheet is candid about gaps: live-provider behavior, stakeholder consultation, formal impact assessment, drift monitoring, backup/restore, and fairness evaluation are not complete.
@@ -319,7 +319,7 @@ Adapters:
 - OpenAI: `ChatOpenAI`
 - Gemini: `ChatGoogleGenerativeAI`
 
-All use temperature 0 and a 60-second timeout, with application-level retries. Provider text is stripped of Markdown fences, reduced to the outermost JSON object, and validated against the agent schema. Malformed output is classified separately from transient failure.
+All use temperature 0 and `AEGISFLOW_LLM_TIMEOUT` (default 60 s), with application-level retries bounded by one budget per candidate. Provider text is stripped of Markdown fences, reduced to the outermost JSON object, and validated against the agent schema. Malformed output is classified separately from transient failure, and classification checks exception types before message text.
 
 Real mode requires **all four** conditions:
 
@@ -328,7 +328,7 @@ Real mode requires **all four** conditions:
 3. a provider key
 4. one non-empty model id
 
-If any is missing, startup falls back to mock and records the reason. No live call was made in this build.
+If any is missing, startup falls back to mock and records the reason. Real mode has since been executed end to end once (see §6.1).
 
 ### 5.4 Document handling
 
@@ -376,20 +376,21 @@ Markdown and TXT exports contain:
 
 | Level | Scope | Count |
 |---|---|---:|
-| Unit | Models, database, approvals, extraction guards, skills, policy checks, metrics, settings fallback, writer voice | 76 |
-| End-to-end | Real compiled graph, real SQLite, real approval state machine, mock LLM; TC-01–TC-13 | 13 |
-| UI | Streamlit `AppTest`: all five pages, decision refusal, approval, rejection confirmation, revision, finalization | 3 |
-| **Total** | | **92** |
+| Unit | Models, database, approvals, extraction guards, skills, policy checks, metrics, settings fallback, writer voice, failover and classification, routing, provenance | 132 |
+| End-to-end | Real compiled graph, real SQLite, real approval state machine, mock LLM; TC-01–TC-13 plus run-mode provenance and revision state | 15 |
+| UI | Streamlit `AppTest`: all five pages, decision refusal, approval, rejection confirmation, revision, finalization, readability chip | 6 |
+| **Total** | | **153** |
 
 Additional recorded smoke checks:
 
 - Manual mock run reached `awaiting_human_review`; approval and resume reached `completed`.
 - Streamlit server health endpoint returned `ok`.
-- All 92 tests passed.
+- All 153 tests passed.
 - Theme checks 16/16 PASS; contrast checks 40/40 PASS.
 - Playwright responsive check at 360/768/1280/1536: **PASS** with full-page screenshots in `ui_checks/`.
 - Browser spot-check of Review and History at 1280 and 360: **PASS** (`ui_checks/review_*.png`, `history_*.png`); the 360 px sidebar collapses and still reaches every page.
-- `ruff check .` clean; coverage **78%** (statement + branch); CI matrix runs lint, tests with a 75% gate, and theme/contrast on Windows and Ubuntu.
+- `ruff check .` clean; coverage **79.76%** (statement + branch); CI matrix runs lint, tests with a 75% gate plus a 70% floor for `llm_service.py`, and theme/contrast on Windows and Ubuntu.
+- Real mode: one full task on 29 October 2026 served by `gemini:gemini-3.5-flash` with no fallback, 5 LLM calls, 7,401 input / 8,668 output tokens, 61.2 s summed agent latency. A single recorded run, not a benchmark.
 - Approval race hardening: checks and writes share one transaction; a unique `(version_id, decision)` index backs the single-user check. Two concurrent approvals record exactly one.
 - Extraction guards: 200-page PDF cap, DOCX entry/expanded-size/compression-ratio limits, and signature checks, all covered by tests.
 - Provider contract tests run the real-provider code path with fake chat models: malformed output, timeout, 429 retry, 401 non-retry, and construction guards.
@@ -417,7 +418,7 @@ Additional recorded smoke checks:
 ```text
 $ .\.venv\Scripts\python.exe -m pytest tests\ -q
 ...................................................................                      [100%]
-92 passed in 10.10s
+153 passed, 4 warnings in 13.12s
 ```
 
 Duration varies by machine. The recorded result is the actual run, not an estimate.
@@ -438,7 +439,7 @@ Duration varies by machine. The recorded result is the actual run, not an estima
 
 | Area | Status | Reason |
 |---|---|---|
-| Live OpenRouter/OpenAI/Gemini calls | **Not executed** | Real mode not enabled; no call authorized |
+| Live OpenRouter/OpenAI/Gemini calls | **Executed once** | One full task on 29 October 2026 served by `gemini:gemini-3.5-flash`, no fallback; not benchmarked |
 | Real-model output quality/latency | **Not measured** | Same |
 | Browser CSS/accessibility | **Verified** | Playwright page sweep at four widths; axe-core 0 WCAG 2.1 A/AA violations (light + dark); no pixel-diff |
 | Multi-user/concurrency | **Not tested** | Single-user design |
@@ -520,7 +521,7 @@ Redacting the draft would make a meaningful review impossible: the reviewer must
 
 ## 9. Limitations
 
-1. **Real-provider mode is unverified.** Adapters are implemented; no live call was made.
+1. **Real-provider mode is verified for one run, not benchmarked.** One full task ran on `gemini:gemini-3.5-flash` on 29 October 2026 with no fallback; output quality, error rates, and latency under load were not measured.
 2. **No OCR.** Image-only PDFs cannot be processed.
 3. **Single user, no authentication.** Reviewer identity is self-asserted.
 4. **Local database is trusted.** Hash binding is integrity detection, not non-repudiation.
@@ -554,7 +555,7 @@ Redacting the draft would make a meaningful review impossible: the reviewer must
 
 AegisFlow demonstrates that a hierarchical multi-agent document system can be useful without being unaccountable. The Planner establishes intent, the Orchestrator controls flow, specialist workers do the language work, deterministic checks and an independent reviewer challenge the result, and a human approves the exact version that will be exported.
 
-The prototype is complete for the course scope: it runs in mock mode, it is tested with 92 passing tests, it enforces a hash-bound approval gate, it documents eight governance rules and nine risks, it includes a project-scoped UI design system, and it maps every course deliverable to evidence. It is equally important that the report does not overclaim: real-provider mode was not executed, and that limitation is visible in the README, UI, tests, NIST worksheet, and this report.
+The prototype is complete for the course scope: it runs in mock mode, it is tested with 153 passing tests, it enforces a hash-bound approval gate, it documents eight governance rules and nine risks, it includes a project-scoped UI design system, and it maps every course deliverable to evidence. It is equally important that the report does not overclaim: real mode has been executed once end to end and is reported as a single recorded run, not a benchmark, and that limitation is visible in the README, testing docs, NIST worksheet, and this report.
 
 The central lesson is simple: **generation can be probabilistic; authority should not be.**
 
@@ -610,7 +611,7 @@ AegisFlow/
 │   └── ui/                        Five pages, tokenized components, responsive hierarchy
 ├── skills/                        6 SKILL.md packages
 ├── sample_data/                   Clean, injection, corrupt, encrypted fixtures
-├── tests/                         92 tests
+├── tests/                         153 tests
 ├── docs/                          Design, governance, risk, NIST, testing, report
 └── slides/                        Self-contained HTML deck
 ```
@@ -621,7 +622,7 @@ AegisFlow/
 
 | Claim | Evidence |
 |---|---|
-| 92 tests passed | `docs/testing.md` §6; `tests/` |
+| 153 tests passed | `docs/testing.md` §6; `tests/` |
 | Approval enforcement | `docs/human_approval.md`; TC-01–TC-05, TC-10; UI approval and rejection tests |
 | Selective routing | TC-13; `docs/workflow.md` §4 |
 | Governance rules | `docs/governance_rules.md`; `test_governance.py` |
